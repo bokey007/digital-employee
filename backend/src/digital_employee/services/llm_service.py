@@ -45,64 +45,73 @@ Example of CORRECT behavior:
 
 CONSOLIDATE_SYSTEM_PROMPT = """You are assembling a monthly client newsletter for Boehringer Ingelheim's Information Management Shared Services.
 You will receive approved content sections from multiple programme/workstream leads.
-Consolidate them into a single, cohesive newsletter body matching the exact corporate format.
+Consolidate them into a single, cohesive newsletter body. 
+
+== CREATIVE FREEDOM & PROFESSIONALISM ==
+You have creative freedom to structure the layout in the most engaging, professional, and visually appealing way possible. 
+Because the amount of content provided by leads may vary (some very short, some very long), you must adapt the layout dynamically so it always looks like a premium, 10/10 corporate newsletter.
+
+== REQUIRED CORPORATE COLORS & GUIDELINES ==
+While you have structural freedom, you MUST strictly use the following corporate color palette:
+- Primary Dark Green: #08312A (Use for major headers, primary banners, important text)
+- Highlight Neon Green: #00E47C (Use for accents, sub-headers, table header backgrounds)
+- Beige/Grey Background: #E5E3DE (Use for banner backgrounds or footer areas)
+- Light Grey Data Background: #f2f2f2 (Use for table cells or content blocks)
+- Text Colors: Use #ffffff (white) on Dark Green backgrounds. Use #000000 (black) or #333333 on light backgrounds.
 
 == FORMAT RULES ==
-- Output ONLY valid HTML for the body content (no <html> or <body> tags).
-- Do NOT use standard Markdown headers. You MUST use the exact HTML structure and inline CSS styles specified below so it renders correctly in Outlook.
-- Maintain a highly professional, business-formal tone.
+- Output ONLY valid HTML for the body content (no <html>, <head>, or <body> tags).
+- Do NOT use standard Markdown headers (#, ##). You MUST use inline CSS styles so it renders correctly in email clients like Outlook.
+- Maintain a highly professional, business-formal, and confident tone.
 
-== REQUIRED HTML STRUCTURE ==
+== RECOMMENDED LAYOUT PATTERNS (Adapt as needed) ==
 
-1. "KEY HIGHLIGHTS" Banner:
-<div style="background-color: #E5E3DE; text-align: center; padding: 40px 20px; font-family: Calibri, sans-serif;">
-    <h2 style="margin: 0; font-size: 36px; color: #08312A; text-transform: uppercase; font-weight: bold;">KEY HIGHLIGHTS</h2>
+1. "KEY HIGHLIGHTS" Banner (Always include this at the top):
+<div style="background-color: #E5E3DE; text-align: center; padding: 40px 20px; font-family: Calibri, sans-serif; border-bottom: 3px solid #00E47C;">
+    <h2 style="margin: 0; font-size: 32px; color: #08312A; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">KEY HIGHLIGHTS</h2>
+    <!-- Add a brief 1-2 sentence executive summary here if appropriate -->
 </div>
 
-2. Major Programme Block (e.g. for overarching updates that are NOT 2-column grids yet, like Data Strategy, Oncology, etc.):
-<div style="background-color: #08312A; padding: 20px; font-family: Calibri, sans-serif; color: #ffffff;">
-    <h3 style="color: #00E47C; font-size: 18px; margin-bottom: 10px;">Programme / Workstream Name</h3>
-    <ul style="margin: 0; padding-left: 20px;">
-        <li style="color: #ffffff; font-size: 14px; margin-bottom: 5px;">Update detail 1</li>
+2. Major Programme Block (For overarching updates or categories with lots of content):
+<div style="background-color: #08312A; padding: 25px; margin-top: 30px; margin-bottom: 20px; font-family: Calibri, sans-serif; border-radius: 4px;">
+    <h3 style="color: #00E47C; font-size: 22px; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid #00E47C; padding-bottom: 10px;">Programme Name</h3>
+    <!-- Content goes here. Use white text (#ffffff) -->
+    <ul style="margin: 0; padding-left: 20px; color: #ffffff;">
+        <li style="font-size: 15px; margin-bottom: 8px;">Update detail</li>
     </ul>
 </div>
 
-3. Major Category Banner (e.g. "DATA", "BUSINESS REPORTING") to separate the 2-column tables:
-<div style="background-color: #E5E3DE; text-align: center; padding: 20px;">
-    <h2 style="margin: 0; font-size: 36px; color: #08312A; text-transform: uppercase; font-weight: bold; text-decoration: underline;">DATA</h2>
-</div>
-
-4. For specific workstreams inside that category, MUST use 2-column tables on a light grey background:
-<table width="100%" cellpadding="10" cellspacing="0" border="0" style="margin-bottom: 20px; background-color: #f2f2f2; font-family: Calibri, sans-serif;">
+3. The 2-Column Grid (Highly recommended when comparing 2 workstreams or grouping smaller updates):
+<table width="100%" cellpadding="15" cellspacing="0" border="0" style="margin-bottom: 25px; background-color: #f2f2f2; font-family: Calibri, sans-serif; border-radius: 4px;">
     <tr>
         <!-- Column 1 Header -->
-        <td width="48%" valign="top" style="background-color: #00E47C; text-align: center;">
-            <strong style="color: #000000; font-size: 18px;">MDM</strong>
+        <td width="48%" valign="top" style="background-color: #00E47C; text-align: center; border-radius: 4px 0 0 0;">
+            <strong style="color: #08312A; font-size: 18px; text-transform: uppercase;">Workstream A</strong>
         </td>
         <td width="4%"></td> <!-- spacer -->
         <!-- Column 2 Header -->
-        <td width="48%" valign="top" style="background-color: #00E47C; text-align: center;">
-            <strong style="color: #000000; font-size: 18px;">PEP</strong>
+        <td width="48%" valign="top" style="background-color: #00E47C; text-align: center; border-radius: 0 4px 0 0;">
+            <strong style="color: #08312A; font-size: 18px; text-transform: uppercase;">Workstream B</strong>
         </td>
     </tr>
     <tr>
         <!-- Column 1 Content -->
-        <td width="48%" valign="top">
-            <ol style="margin: 0; padding-left: 20px; color: #000000;">
-                <li style="font-size: 14px; margin-bottom: 5px;">Detail 1</li>
-            </ol>
+        <td width="48%" valign="top" style="padding-top: 15px;">
+            <ul style="margin: 0; padding-left: 20px; color: #333333;">
+                <li style="font-size: 14px; margin-bottom: 8px;">Detail</li>
+            </ul>
         </td>
         <td width="4%"></td> <!-- spacer -->
         <!-- Column 2 Content -->
-        <td width="48%" valign="top">
-            <ol style="margin: 0; padding-left: 20px; color: #000000;">
-                <li style="font-size: 14px; margin-bottom: 5px;">Detail 1</li>
-            </ol>
+        <td width="48%" valign="top" style="padding-top: 15px;">
+            <ul style="margin: 0; padding-left: 20px; color: #333333;">
+                <li style="font-size: 14px; margin-bottom: 8px;">Detail</li>
+            </ul>
         </td>
     </tr>
 </table>
 
-*Repeat the <tr> rows for every 2 workstreams in the category. If there is a 3rd workstream, it goes in a new <tr> header / content pair.
+Use your best judgment to mix and match these patterns. For example, if a workstream has only 1 bullet point, group it with another in a 2-column grid. If a programme has massive updates, give it a full-width Dark Green block. Make it look beautiful!
 """
 
 FEEDBACK_SYSTEM_PROMPT = """You are revising a newsletter based on feedback from the delivery leader.
