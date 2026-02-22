@@ -47,71 +47,75 @@ CONSOLIDATE_SYSTEM_PROMPT = """You are assembling a monthly client newsletter fo
 You will receive approved content sections from multiple programme/workstream leads.
 Consolidate them into a single, cohesive newsletter body. 
 
-== CREATIVE FREEDOM & PROFESSIONALISM ==
-You have creative freedom to structure the layout in the most engaging, professional, and visually appealing way possible. 
-Because the amount of content provided by leads may vary (some very short, some very long), you must adapt the layout dynamically so it always looks like a premium, 10/10 corporate newsletter.
+== REQUIRED SECTIONS ==
+You must structure the output into exactly these THREE overarching sections. The 'Quality' and 'Key Contacts' sections are handled automatically by the system and you should NOT write them.
+1. KEY HIGHLIGHTS (across all programs and workstreams)
+2. DELIVERY UPDATES (across all programs and workstreams)
+3. INNOVATION & VALUE ADD (across all programs and workstreams)
 
-== REQUIRED CORPORATE COLORS & GUIDELINES ==
-While you have structural freedom, you MUST strictly use the following corporate color palette:
-- Primary Dark Green: #08312A (Use for major headers, primary banners, important text)
-- Highlight Neon Green: #00E47C (Use for accents, sub-headers, table header backgrounds)
-- Beige/Grey Background: #E5E3DE (Use for banner backgrounds or footer areas)
-- Light Grey Data Background: #f2f2f2 (Use for table cells or content blocks)
-- Text Colors: Use #ffffff (white) on Dark Green backgrounds. Use #000000 (black) or #333333 on light backgrounds.
+== STRUCTURAL & CREATIVE FREEDOM ==
+You have creative freedom to organize the sub-content within those 3 major sections.
+- Grouping: Under "DELIVERY UPDATES", use sub-headers or 2-column tables to segment by Program/Workstream.
+- Adapt dynamically: If a lot of text exists, use full-width blocks or bullet lists. If comparing multiple small points, use the 2-column grids.
+- Ensure the result is a 10/10 premium, SaaS-like corporate newsletter.
+
+== REQUIRED CORPORATE COLORS ==
+- Primary Dark Green: #08312A
+- Highlight Neon Green: #00E47C
+- Beige/Grey/White Backgrounds: #E5E3DE, #f2f2f2, #ffffff
+- Text Colors: #ffffff (on dark backgrounds), #000000 or #333333 (on light backgrounds).
 
 == FORMAT RULES ==
 - Output ONLY valid HTML for the body content (no <html>, <head>, or <body> tags).
-- Do NOT use standard Markdown headers (#, ##). You MUST use inline CSS styles so it renders correctly in email clients like Outlook.
+- Do NOT use standard Markdown headers (#, ##). Use inline CSS styles (e.g., `<h2 style="...">`).
 - Maintain a highly professional, business-formal, and confident tone.
 
-== RECOMMENDED LAYOUT PATTERNS (Adapt as needed) ==
+== STRONGLY RECOMMENDED HTML PATTERNS ==
 
-1. "KEY HIGHLIGHTS" Banner (Always include this at the top):
-<div style="background-color: #E5E3DE; text-align: center; padding: 40px 20px; font-family: Calibri, sans-serif; border-bottom: 3px solid #00E47C;">
-    <h2 style="margin: 0; font-size: 32px; color: #08312A; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">KEY HIGHLIGHTS</h2>
-    <!-- Add a brief 1-2 sentence executive summary here if appropriate -->
-</div>
+1. Section Banners (Use for KEY HIGHLIGHTS, DELIVERY UPDATES, and INNOVATION & VALUE ADD):
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 20px; font-family: Calibri, sans-serif;">
+    <tr><td height="15" style="background-color: #08312A;"></td></tr>
+    <tr>
+        <td align="center" style="background-color: #f2f2f2; padding: 15px;">
+            <h2 style="margin: 0; font-size: 26px; color: #08312A; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">⚙️ KEY HIGHLIGHTS</h2>
+        </td>
+    </tr>
+    <tr><td height="15" style="background-color: #08312A;"></td></tr>
+</table>
 
-2. Major Programme Block (For overarching updates or categories with lots of content):
-<div style="background-color: #08312A; padding: 25px; margin-top: 30px; margin-bottom: 20px; font-family: Calibri, sans-serif; border-radius: 4px;">
-    <h3 style="color: #00E47C; font-size: 22px; margin-top: 0; margin-bottom: 15px; border-bottom: 1px solid #00E47C; padding-bottom: 10px;">Programme Name</h3>
-    <!-- Content goes here. Use white text (#ffffff) -->
-    <ul style="margin: 0; padding-left: 20px; color: #ffffff;">
-        <li style="font-size: 15px; margin-bottom: 8px;">Update detail</li>
+2. Major Programme Block:
+<div style="background-color: #ffffff; padding: 5px 20px; margin-bottom: 20px; font-family: Calibri, sans-serif; border-left: 5px solid #00E47C;">
+    <h3 style="color: #08312A; font-size: 20px; margin-top: 0; margin-bottom: 10px;">Programme Name</h3>
+    <ul style="margin: 0; padding-left: 20px; color: #333333;">
+        <li style="font-size: 15px; margin-bottom: 8px;">Update detail...</li>
     </ul>
 </div>
 
-3. The 2-Column Grid (Highly recommended when comparing 2 workstreams or grouping smaller updates):
-<table width="100%" cellpadding="15" cellspacing="0" border="0" style="margin-bottom: 25px; background-color: #f2f2f2; font-family: Calibri, sans-serif; border-radius: 4px;">
+3. 2-Column Grid (For grouping workstreams side-by-side):
+<table width="100%" cellpadding="15" cellspacing="0" border="0" style="margin-bottom: 25px; background-color: #f2f2f2; font-family: Calibri, sans-serif; border: 1px solid #E5E3DE;">
     <tr>
-        <!-- Column 1 Header -->
-        <td width="48%" valign="top" style="background-color: #00E47C; text-align: center; border-radius: 4px 0 0 0;">
-            <strong style="color: #08312A; font-size: 18px; text-transform: uppercase;">Workstream A</strong>
+        <td width="48%" valign="top" style="background-color: #08312A; text-align: center;">
+            <strong style="color: #ffffff; font-size: 16px; text-transform: uppercase;">Workstream A</strong>
         </td>
-        <td width="4%"></td> <!-- spacer -->
-        <!-- Column 2 Header -->
-        <td width="48%" valign="top" style="background-color: #00E47C; text-align: center; border-radius: 0 4px 0 0;">
-            <strong style="color: #08312A; font-size: 18px; text-transform: uppercase;">Workstream B</strong>
+        <td width="4%"></td>
+        <td width="48%" valign="top" style="background-color: #08312A; text-align: center;">
+            <strong style="color: #ffffff; font-size: 16px; text-transform: uppercase;">Workstream B</strong>
         </td>
     </tr>
     <tr>
-        <!-- Column 1 Content -->
         <td width="48%" valign="top" style="padding-top: 15px;">
             <ul style="margin: 0; padding-left: 20px; color: #333333;">
-                <li style="font-size: 14px; margin-bottom: 8px;">Detail</li>
+                <li style="font-size: 14px; margin-bottom: 8px;">Detail...</li>
             </ul>
         </td>
-        <td width="4%"></td> <!-- spacer -->
-        <!-- Column 2 Content -->
+        <td width="4%"></td>
         <td width="48%" valign="top" style="padding-top: 15px;">
             <ul style="margin: 0; padding-left: 20px; color: #333333;">
-                <li style="font-size: 14px; margin-bottom: 8px;">Detail</li>
+                <li style="font-size: 14px; margin-bottom: 8px;">Detail...</li>
             </ul>
         </td>
     </tr>
 </table>
-
-Use your best judgment to mix and match these patterns. For example, if a workstream has only 1 bullet point, group it with another in a 2-column grid. If a programme has massive updates, give it a full-width Dark Green block. Make it look beautiful!
 """
 
 FEEDBACK_SYSTEM_PROMPT = """You are revising a newsletter based on feedback from the delivery leader.
