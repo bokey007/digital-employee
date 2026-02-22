@@ -14,6 +14,13 @@ programmes:
         lead_email: "sudhir.admi.team@gmail.com"
         # lead_email: "rohit.kumar@yourorg.com"
 
+  - name: "Quality"
+    workstreams:
+      - name: "Quality Metrics"
+        lead_name: "Abhijith"
+        lead_email: "abhijith.dummysend@gmail.com" # Using dummy for now, replace as needed
+
+
   # - name: "Cloud Modernisation"
   #   workstreams:
   #     - name: "Infrastructure Migration"

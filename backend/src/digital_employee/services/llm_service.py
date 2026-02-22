@@ -48,10 +48,11 @@ You will receive approved content sections from multiple programme/workstream le
 Consolidate them into a single, cohesive newsletter body. 
 
 == REQUIRED SECTIONS ==
-You must structure the output into exactly these THREE overarching sections. The 'Quality' and 'Key Contacts' sections are handled automatically by the system and you should NOT write them.
+You must structure the output into exactly these FOUR overarching sections. The 'Key Contacts' section is handled automatically by the system and you should NOT write it.
 1. KEY HIGHLIGHTS (across all programs and workstreams)
 2. DELIVERY UPDATES (across all programs and workstreams)
-3. INNOVATION & VALUE ADD (across all programs and workstreams)
+3. QUALITY (Metrics must be mapped into the exact HTML block provided below)
+4. INNOVATION & VALUE ADD (across all programs and workstreams)
 
 == STRUCTURAL & CREATIVE FREEDOM ==
 You have creative freedom to organize the sub-content within those 3 major sections.
@@ -115,6 +116,63 @@ You have creative freedom to organize the sub-content within those 3 major secti
             </ul>
         </td>
     </tr>
+</table>
+
+4. Quality Dashboard (YOU MUST USE THIS EXACT STRUCTURE FOR THE QUALITY SECTION. DO NOT CHANGE THE STYLES, just replace the [NUM] placeholders with the numbers provided by the Quality Lead):
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 30px; margin-bottom: 20px; font-family: Calibri, sans-serif; background-color: #E5E3DE;">
+  <tr>
+    <td colspan="6" style="padding: 0;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr><td height="12" style="background-color: #08312A;"></td></tr>
+        <tr>
+          <td align="center" style="background-color: #ffffff; padding: 10px;">
+            <h2 style="margin: 0; font-size: 26px; color: #08312A; text-transform: uppercase;">⚙️ QUALITY</h2>
+          </td>
+        </tr>
+        <tr><td height="12" style="background-color: #08312A;"></td></tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td width="16.6%" align="center" valign="top" style="padding: 30px 5px 0 5px; border-right: 1px dashed #999;">
+      <div style="width: 70px; height: 70px; border-radius: 50%; background-color: #41cc73; margin: 0 auto; border: 4px solid #ffffff; outline: 2px solid #08312A; text-align: center; line-height: 70px; font-weight: bold; font-size: 22px; color: #000;">[NUM]</div>
+    </td>
+    <td width="16.6%" align="center" valign="top" style="padding: 30px 5px 0 5px; border-right: 1px dashed #999;">
+      <div style="width: 70px; height: 70px; border-radius: 50%; background-color: #41cc73; margin: 0 auto; border: 4px solid #ffffff; outline: 2px solid #08312A; text-align: center; line-height: 70px; font-weight: bold; font-size: 22px; color: #000;">[NUM]</div>
+    </td>
+    <td width="16.6%" align="center" valign="top" style="padding: 30px 5px 0 5px; border-right: 1px dashed #999;">
+      <div style="width: 70px; height: 70px; border-radius: 50%; background-color: #41cc73; margin: 0 auto; border: 4px solid #ffffff; outline: 2px solid #08312A; text-align: center; line-height: 70px; font-weight: bold; font-size: 22px; color: #000;">[NUM]%</div>
+    </td>
+    <td width="16.6%" align="center" valign="top" style="padding: 30px 5px 0 5px; border-right: 1px dashed #999;">
+      <div style="width: 70px; height: 70px; border-radius: 50%; background-color: #41cc73; margin: 0 auto; border: 4px solid #ffffff; outline: 2px solid #08312A; text-align: center; line-height: 70px; font-weight: bold; font-size: 22px; color: #000;">[NUM]%</div>
+    </td>
+    <td width="16.6%" align="center" valign="top" style="padding: 30px 5px 0 5px; border-right: 1px dashed #999;">
+      <div style="width: 70px; height: 70px; border-radius: 50%; background-color: #41cc73; margin: 0 auto; border: 4px solid #ffffff; outline: 2px solid #08312A; text-align: center; line-height: 70px; font-weight: bold; font-size: 22px; color: #000;">[NUM]%</div>
+    </td>
+    <td width="16.6%" align="center" valign="top" style="padding: 30px 5px 0 5px;">
+      <div style="width: 70px; height: 70px; border-radius: 50%; background-color: #41cc73; margin: 0 auto; border: 4px solid #ffffff; outline: 2px solid #08312A; text-align: center; line-height: 70px; font-weight: bold; font-size: 22px; color: #000;">[NUM]%</div>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;">
+      <div style="background-color: #111111; color: #ffffff; padding: 12px 5px; font-size: 11px; font-weight: normal; text-align: center;">Lean Projects<br>Completed</div>
+    </td>
+    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;">
+      <div style="background-color: #111111; color: #ffffff; padding: 12px 5px; font-size: 11px; font-weight: normal; text-align: center;">GB project<br>Completed</div>
+    </td>
+    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;">
+      <div style="background-color: #111111; color: #ffffff; padding: 12px 5px; font-size: 11px; font-weight: normal; text-align: center;">Lean Trained<br>&amp; Tested</div>
+    </td>
+    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;">
+      <div style="background-color: #111111; color: #ffffff; padding: 12px 5px; font-size: 11px; font-weight: normal; text-align: center;">GB Trained<br>&amp; Tested</div>
+    </td>
+    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;">
+      <div style="background-color: #111111; color: #ffffff; padding: 12px 5px; font-size: 11px; font-weight: normal; text-align: center;">Lean<br>Certified</div>
+    </td>
+    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;">
+      <div style="background-color: #111111; color: #ffffff; padding: 12px 5px; font-size: 11px; font-weight: normal; text-align: center;">GB<br>Certified</div>
+    </td>
+  </tr>
 </table>
 """
 
