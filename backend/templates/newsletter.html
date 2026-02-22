@@ -32,91 +32,58 @@
 
     /* Container */
     .email-container {
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto;
-      font-family: Arial, Helvetica, sans-serif;
-      color: #333333;
-      line-height: 1.5;
+      font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+      color: #000000;
+      line-height: 1.4;
     }
 
     /* Top BI Header Banner */
     .header-banner {
-      background-color: #113c32;
-      /* Deep BI Green */
-      padding: 20px;
-      text-align: left;
+      background-color: #08312A;
+      padding: 0;
+      text-align: center;
+      border: 1px solid #08312A;
     }
 
-    .header-banner table {
-      width: 100%;
-    }
-
-    .header-banner .logo-text {
-      color: #ffffff;
-      font-size: 16px;
-      margin-bottom: 5px;
-    }
-
-    .header-banner .main-title {
-      color: #4CAF50;
-      /* Bright Green */
-      font-size: 24px;
-      font-weight: bold;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      margin: 0;
-    }
-
-    .header-banner .sub-title {
-      color: #ffffff;
-      font-size: 20px;
-      text-transform: uppercase;
-      font-weight: bold;
-      letter-spacing: 1px;
-      margin: 0;
-    }
-
-    .header-banner .edition-badge {
-      background-color: #f4f0e6;
-      color: #113c32;
-      padding: 5px 15px;
-      font-weight: bold;
-      border-radius: 4px;
-      display: inline-block;
-      font-size: 14px;
+    .header-banner img {
+      display: block;
+      margin: 0 auto;
     }
 
     /* Sub Navigation */
     .sub-nav {
-      background-color: #f4f0e6;
-      padding: 10px;
+      background-color: #f2f2f2;
+      padding: 15px 10px;
       text-align: center;
-      border-bottom: 3px solid #113c32;
+      border-left: 1px solid #08312A;
+      border-right: 1px solid #08312A;
     }
 
     .sub-nav a {
-      color: #2b5c8f;
-      text-decoration: underline;
-      font-size: 11px;
-      margin: 0 8px;
+      color: #0070C0;
+      text-decoration: none;
+      font-size: 14px;
+      margin: 0 15px;
+      font-weight: bold;
     }
 
     /* Body Wrapper */
     .body-content {
-      padding: 20px 10px;
       background-color: #ffffff;
     }
 
     /* Footer */
     .footer {
-      background: #f4f0e6;
+      background: #E5E3DE;
       padding: 24px 32px;
       text-align: center;
-      border-top: 4px solid #113c32;
+      border-top: 4px solid #08312A;
     }
 
     .footer p {
-      color: #555555;
+      color: #08312A;
       font-size: 12px;
       margin: 4px 0;
     }
@@ -128,30 +95,24 @@
 
     <!-- Header -->
     <div class="header-banner">
-      <table border="0" cellpadding="0" cellspacing="0">
+      <!-- Just simulated logo/header area -->
+      <table border="0" cellpadding="0" cellspacing="0" width="100%">
         <tr>
-          <td valign="middle">
-            <div class="logo-text">Boehringer Ingelheim</div>
-            <h1 class="main-title">INFORMATION MANAGEMENT</h1>
-            <h2 class="sub-title">SHARED SERVICES</h2>
-          </td>
-          <td valign="middle" align="right">
-            <div class="edition-badge">{{ date }} Edition</div>
-          </td>
+          <td height="50" style="background: #08312A;"></td>
         </tr>
       </table>
     </div>
 
     <!-- Navigation Bar -->
     <div class="sub-nav">
-      <a href="#">Data</a> |
-      <a href="#">Business Reporting</a> |
-      <a href="#">Specialty</a> |
-      <a href="#">Digital</a> |
-      <a href="#">Leadership</a> |
-      <a href="#">GenAI</a> |
-      <a href="#">Quality</a> |
-      <a href="#">Innovation</a> |
+      <a href="#">Data</a>
+      <a href="#">Business Reporting</a>
+      <a href="#">Specialty</a>
+      <a href="#">Digital</a>
+      <a href="#">Leadership</a>
+      <a href="#">GenAI</a>
+      <a href="#">Quality</a>
+      <a href="#">Innovation</a>
       <a href="#">Key Contacts</a>
     </div>
 
@@ -159,7 +120,7 @@
     <div class="body-content">
       {% if anuj_instructions %}
       <div
-        style="background: #e6fbf0; border-left: 4px solid #4CAF50; padding: 12px 16px; margin-bottom: 24px; font-family: Arial, sans-serif;">
+        style="background: #e6fbf0; border-left: 4px solid #00E47C; padding: 12px 16px; margin: 20px; font-family: Arial, sans-serif;">
         <p style="margin-top: 0; font-size: 14px; color: #111;">Hi <strong>{{ reviewer_name }}</strong>, the
           consolidated newsletter is ready for your review.</p>
         <strong style="display: block; margin-top: 10px; font-size: 13px; color: #111;">📝 How to provide
@@ -180,8 +141,8 @@
 
     <!-- Footer -->
     <div class="footer">
-      <p>Prepared autonomously by the AI Digital Employee</p>
-      <p>{{ date_full }} &bull; &copy; Boehringer Ingelheim {{ year }}</p>
+      <p>Prepared autonomously by the AI Digital Employee on {{ date_full }}</p>
+      <p>&copy; Boehringer Ingelheim {{ year }}</p>
     </div>
 
   </div>

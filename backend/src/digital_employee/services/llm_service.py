@@ -55,55 +55,54 @@ Consolidate them into a single, cohesive newsletter body matching the exact corp
 == REQUIRED HTML STRUCTURE ==
 
 1. "KEY HIGHLIGHTS" Banner:
-<div style="background-color: #f4f0e6; text-align: center; padding: 15px; border-top: 2px solid #113c32; border-bottom: 2px solid #113c32; margin: 20px 0;">
-    <h2 style="margin: 0; font-size: 20px; color: #113c32; text-transform: uppercase;">KEY HIGHLIGHTS</h2>
-</div>
-<div style="padding: 10px 20px;">
-    <!-- Add the top 3-4 most important highlights overall here -->
-    <h4 style="color: #113c32; font-size: 14px; margin-bottom: 5px;">Category Name</h4>
-    <ul style="margin-top: 0; font-size: 12px; color: #333;"><li>Highlight 1</li></ul>
+<div style="background-color: #E5E3DE; text-align: center; padding: 40px 20px; font-family: Calibri, sans-serif;">
+    <h2 style="margin: 0; font-size: 36px; color: #08312A; text-transform: uppercase; font-weight: bold;">KEY HIGHLIGHTS</h2>
 </div>
 
-2. "DELIVERY UPDATES" Banner:
-<div style="background-color: #f4f0e6; text-align: center; padding: 25px; margin: 30px 0;">
-    <h2 style="margin: 0; font-size: 24px; color: #333; text-transform: uppercase;">DELIVERY UPDATES</h2>
-    <p style="font-size: 14px; color: #555; margin-top: 10px;">Shared Services continues to play an instrumental role enabling our workstreams.</p>
+2. Major Programme Block (e.g. for overarching updates that are NOT 2-column grids yet, like Data Strategy, Oncology, etc.):
+<div style="background-color: #08312A; padding: 20px; font-family: Calibri, sans-serif; color: #ffffff;">
+    <h3 style="color: #00E47C; font-size: 18px; margin-bottom: 10px;">Programme / Workstream Name</h3>
+    <ul style="margin: 0; padding-left: 20px;">
+        <li style="color: #ffffff; font-size: 14px; margin-bottom: 5px;">Update detail 1</li>
+    </ul>
 </div>
 
-3. For each Programme (e.g., "DATA", "BUSINESS REPORTING"):
-<div style="text-align: center; padding: 10px 0; border-top: 4px solid #4CAF50; border-bottom: 4px solid #4CAF50; margin: 20px 0;">
-    <h3 style="margin: 0; font-size: 18px; color: #113c32; text-transform: uppercase;">Programme Name</h3>
+3. Major Category Banner (e.g. "DATA", "BUSINESS REPORTING") to separate the 2-column tables:
+<div style="background-color: #E5E3DE; text-align: center; padding: 20px;">
+    <h2 style="margin: 0; font-size: 36px; color: #08312A; text-transform: uppercase; font-weight: bold; text-decoration: underline;">DATA</h2>
 </div>
 
-4. For the Workstreams inside that Programme (Must use 2-column tables):
-<table width="100%" cellpadding="10" cellspacing="0" border="0" style="margin-bottom: 20px;">
+4. For specific workstreams inside that category, MUST use 2-column tables on a light grey background:
+<table width="100%" cellpadding="10" cellspacing="0" border="0" style="margin-bottom: 20px; background-color: #f2f2f2; font-family: Calibri, sans-serif;">
     <tr>
-        <!-- Column 1 -->
-        <td width="50%" valign="top">
-            <div style="background-color: #4CAF50; padding: 8px; text-align: center;">
-                <strong style="color: #111; font-size: 13px;">Workstream 1 Name</strong>
-            </div>
-            <div style="background-color: #fdfbf7; padding: 15px; font-size: 12px; color: #333; min-height: 100px;">
-                <ol style="margin: 0; padding-left: 20px;">
-                    <li>Detail 1</li>
-                </ol>
-            </div>
+        <!-- Column 1 Header -->
+        <td width="48%" valign="top" style="background-color: #00E47C; text-align: center;">
+            <strong style="color: #000000; font-size: 18px;">MDM</strong>
         </td>
-        <!-- Column 2 (If odd number of workstreams, leave second <td> empty) -->
-        <td width="50%" valign="top">
-            <div style="background-color: #4CAF50; padding: 8px; text-align: center;">
-                <strong style="color: #111; font-size: 13px;">Workstream 2 Name</strong>
-            </div>
-            <div style="background-color: #fdfbf7; padding: 15px; font-size: 12px; color: #333; min-height: 100px;">
-                <ol style="margin: 0; padding-left: 20px;">
-                    <li>Detail 1</li>
-                </ol>
-            </div>
+        <td width="4%"></td> <!-- spacer -->
+        <!-- Column 2 Header -->
+        <td width="48%" valign="top" style="background-color: #00E47C; text-align: center;">
+            <strong style="color: #000000; font-size: 18px;">PEP</strong>
+        </td>
+    </tr>
+    <tr>
+        <!-- Column 1 Content -->
+        <td width="48%" valign="top">
+            <ol style="margin: 0; padding-left: 20px; color: #000000;">
+                <li style="font-size: 14px; margin-bottom: 5px;">Detail 1</li>
+            </ol>
+        </td>
+        <td width="4%"></td> <!-- spacer -->
+        <!-- Column 2 Content -->
+        <td width="48%" valign="top">
+            <ol style="margin: 0; padding-left: 20px; color: #000000;">
+                <li style="font-size: 14px; margin-bottom: 5px;">Detail 1</li>
+            </ol>
         </td>
     </tr>
 </table>
 
-*Repeat the <tr> row for every 2 workstreams in the programme. If there is a 3rd workstream, it goes in a new <tr>.
+*Repeat the <tr> rows for every 2 workstreams in the category. If there is a 3rd workstream, it goes in a new <tr> header / content pair.
 """
 
 FEEDBACK_SYSTEM_PROMPT = """You are revising a newsletter based on feedback from the delivery leader.
