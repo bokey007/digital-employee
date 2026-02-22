@@ -43,17 +43,67 @@ Example of CORRECT behavior:
 - Lead says: "Completed 1ID decommissioning" → You write: "Successfully completed the 1ID decommissioning process." ← THIS IS CORRECT. Same facts, polished language.
 """
 
-CONSOLIDATE_SYSTEM_PROMPT = """You are assembling a monthly client newsletter for a technology consulting firm.
+CONSOLIDATE_SYSTEM_PROMPT = """You are assembling a monthly client newsletter for Boehringer Ingelheim's Information Management Shared Services.
 You will receive approved content sections from multiple programme/workstream leads.
-Consolidate them into a single, cohesive newsletter body.
+Consolidate them into a single, cohesive newsletter body matching the exact corporate format.
 
-Guidelines:
-- Group content by Programme, then by Workstream within each programme.
-- Each workstream section should have: Key Highlights, Delivery Updates, Innovation & Value Add.
-- Add a brief executive summary at the top (2-3 sentences).
-- Maintain a professional, positive tone throughout.
-- Output as clean HTML (no <html>, <head>, <body> tags — just the inner content).
-- Use consistent formatting: h2 for programmes, h3 for workstreams, h4 for section headings.
+== FORMAT RULES ==
+- Output ONLY valid HTML for the body content (no <html> or <body> tags).
+- Do NOT use standard Markdown headers. You MUST use the exact HTML structure and inline CSS styles specified below so it renders correctly in Outlook.
+- Maintain a highly professional, business-formal tone.
+
+== REQUIRED HTML STRUCTURE ==
+
+1. "KEY HIGHLIGHTS" Banner:
+<div style="background-color: #f4f0e6; text-align: center; padding: 15px; border-top: 2px solid #113c32; border-bottom: 2px solid #113c32; margin: 20px 0;">
+    <h2 style="margin: 0; font-size: 20px; color: #113c32; text-transform: uppercase;">KEY HIGHLIGHTS</h2>
+</div>
+<div style="padding: 10px 20px;">
+    <!-- Add the top 3-4 most important highlights overall here -->
+    <h4 style="color: #113c32; font-size: 14px; margin-bottom: 5px;">Category Name</h4>
+    <ul style="margin-top: 0; font-size: 12px; color: #333;"><li>Highlight 1</li></ul>
+</div>
+
+2. "DELIVERY UPDATES" Banner:
+<div style="background-color: #f4f0e6; text-align: center; padding: 25px; margin: 30px 0;">
+    <h2 style="margin: 0; font-size: 24px; color: #333; text-transform: uppercase;">DELIVERY UPDATES</h2>
+    <p style="font-size: 14px; color: #555; margin-top: 10px;">Shared Services continues to play an instrumental role enabling our workstreams.</p>
+</div>
+
+3. For each Programme (e.g., "DATA", "BUSINESS REPORTING"):
+<div style="text-align: center; padding: 10px 0; border-top: 4px solid #4CAF50; border-bottom: 4px solid #4CAF50; margin: 20px 0;">
+    <h3 style="margin: 0; font-size: 18px; color: #113c32; text-transform: uppercase;">Programme Name</h3>
+</div>
+
+4. For the Workstreams inside that Programme (Must use 2-column tables):
+<table width="100%" cellpadding="10" cellspacing="0" border="0" style="margin-bottom: 20px;">
+    <tr>
+        <!-- Column 1 -->
+        <td width="50%" valign="top">
+            <div style="background-color: #4CAF50; padding: 8px; text-align: center;">
+                <strong style="color: #111; font-size: 13px;">Workstream 1 Name</strong>
+            </div>
+            <div style="background-color: #fdfbf7; padding: 15px; font-size: 12px; color: #333; min-height: 100px;">
+                <ol style="margin: 0; padding-left: 20px;">
+                    <li>Detail 1</li>
+                </ol>
+            </div>
+        </td>
+        <!-- Column 2 (If odd number of workstreams, leave second <td> empty) -->
+        <td width="50%" valign="top">
+            <div style="background-color: #4CAF50; padding: 8px; text-align: center;">
+                <strong style="color: #111; font-size: 13px;">Workstream 2 Name</strong>
+            </div>
+            <div style="background-color: #fdfbf7; padding: 15px; font-size: 12px; color: #333; min-height: 100px;">
+                <ol style="margin: 0; padding-left: 20px;">
+                    <li>Detail 1</li>
+                </ol>
+            </div>
+        </td>
+    </tr>
+</table>
+
+*Repeat the <tr> row for every 2 workstreams in the programme. If there is a 3rd workstream, it goes in a new <tr>.
 """
 
 FEEDBACK_SYSTEM_PROMPT = """You are revising a newsletter based on feedback from the delivery leader.

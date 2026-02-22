@@ -21,6 +21,7 @@
       width: 100% !important;
       -webkit-text-size-adjust: 100%;
       -ms-text-size-adjust: 100%;
+      background-color: #ffffff;
     }
 
     table {
@@ -31,178 +32,158 @@
 
     /* Container */
     .email-container {
-      max-width: 680px;
+      max-width: 800px;
       margin: 0 auto;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: #2D3748;
-      line-height: 1.6;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #333333;
+      line-height: 1.5;
     }
 
-    /* Header */
-    .header {
-      background-color: #08312A;
-      background: linear-gradient(135deg, #08312A 0%, #115e52 100%);
-      padding: 40px 32px;
-      text-align: center;
-      border-radius: 8px 8px 0 0;
+    /* Top BI Header Banner */
+    .header-banner {
+      background-color: #113c32;
+      /* Deep BI Green */
+      padding: 20px;
+      text-align: left;
     }
 
-    .header h1 {
+    .header-banner table {
+      width: 100%;
+    }
+
+    .header-banner .logo-text {
       color: #ffffff;
-      font-size: 28px;
-      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+
+    .header-banner .main-title {
+      color: #4CAF50;
+      /* Bright Green */
+      font-size: 24px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
       margin: 0;
-      letter-spacing: -0.5px;
     }
 
-    .header .date {
-      color: #80ebb8;
+    .header-banner .sub-title {
+      color: #ffffff;
+      font-size: 20px;
+      text-transform: uppercase;
+      font-weight: bold;
+      letter-spacing: 1px;
+      margin: 0;
+    }
+
+    .header-banner .edition-badge {
+      background-color: #f4f0e6;
+      color: #113c32;
+      padding: 5px 15px;
+      font-weight: bold;
+      border-radius: 4px;
+      display: inline-block;
       font-size: 14px;
-      margin-top: 8px;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
     }
 
-    .header .edition {
-      color: #00E47C;
-      font-size: 12px;
-      margin-top: 4px;
+    /* Sub Navigation */
+    .sub-nav {
+      background-color: #f4f0e6;
+      padding: 10px;
+      text-align: center;
+      border-bottom: 3px solid #113c32;
     }
 
-    /* Body */
+    .sub-nav a {
+      color: #2b5c8f;
+      text-decoration: underline;
+      font-size: 11px;
+      margin: 0 8px;
+    }
+
+    /* Body Wrapper */
     .body-content {
-      background: #ffffff;
-      padding: 32px;
-      border-left: 1px solid #e2e8f0;
-      border-right: 1px solid #e2e8f0;
-    }
-
-    /* Content styling */
-    .body-content h2 {
-      color: #08312A;
-      font-size: 22px;
-      font-weight: 700;
-      margin: 28px 0 12px 0;
-      padding-bottom: 8px;
-      border-bottom: 3px solid #00E47C;
-    }
-
-    .body-content h3 {
-      color: #115e52;
-      font-size: 18px;
-      font-weight: 600;
-      margin: 20px 0 8px 0;
-    }
-
-    .body-content h4 {
-      color: #4a5568;
-      font-size: 15px;
-      font-weight: 600;
-      margin: 16px 0 6px 0;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .body-content p {
-      color: #4a5568;
-      font-size: 15px;
-      margin: 8px 0;
-    }
-
-    .body-content ul,
-    .body-content ol {
-      margin: 8px 0;
-      padding-left: 24px;
-    }
-
-    .body-content li {
-      color: #4a5568;
-      font-size: 15px;
-      margin: 4px 0;
-    }
-
-    .body-content strong {
-      color: #2D3748;
-    }
-
-    .body-content hr {
-      border: none;
-      border-top: 1px solid #e2e8f0;
-      margin: 24px 0;
-    }
-
-    /* Highlight box */
-    .highlight-box {
-      background: #e6fbf0;
-      border-left: 4px solid #00E47C;
-      padding: 16px;
-      margin: 16px 0;
-      border-radius: 0 4px 4px 0;
+      padding: 20px 10px;
+      background-color: #ffffff;
     }
 
     /* Footer */
     .footer {
-      background: #f7fafc;
+      background: #f4f0e6;
       padding: 24px 32px;
       text-align: center;
-      border-top: 1px solid #e2e8f0;
-      border-left: 1px solid #e2e8f0;
-      border-right: 1px solid #e2e8f0;
-      border-radius: 0 0 8px 8px;
+      border-top: 4px solid #113c32;
     }
 
     .footer p {
-      color: #a0aec0;
+      color: #555555;
       font-size: 12px;
       margin: 4px 0;
-    }
-
-    .footer .divider {
-      width: 40px;
-      height: 2px;
-      background: #cbd5e0;
-      margin: 12px auto;
     }
   </style>
 </head>
 
-<body style="background-color: #edf2f7; padding: 20px 0;">
+<body style="background-color: #ffffff; padding: 20px 0;">
   <div class="email-container">
+
     <!-- Header -->
-    <div class="header">
-      <h1>{{ title }}</h1>
-      <div class="date">{{ date }}</div>
-      {% if edition_number %}
-      <div class="edition">Edition #{{ edition_number }}</div>
-      {% endif %}
+    <div class="header-banner">
+      <table border="0" cellpadding="0" cellspacing="0">
+        <tr>
+          <td valign="middle">
+            <div class="logo-text">Boehringer Ingelheim</div>
+            <h1 class="main-title">INFORMATION MANAGEMENT</h1>
+            <h2 class="sub-title">SHARED SERVICES</h2>
+          </td>
+          <td valign="middle" align="right">
+            <div class="edition-badge">{{ date }} Edition</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Navigation Bar -->
+    <div class="sub-nav">
+      <a href="#">Data</a> |
+      <a href="#">Business Reporting</a> |
+      <a href="#">Specialty</a> |
+      <a href="#">Digital</a> |
+      <a href="#">Leadership</a> |
+      <a href="#">GenAI</a> |
+      <a href="#">Quality</a> |
+      <a href="#">Innovation</a> |
+      <a href="#">Key Contacts</a>
     </div>
 
     <!-- Body -->
     <div class="body-content">
       {% if anuj_instructions %}
       <div
-        style="background: #f0fdf4; border-left: 4px solid #00E47C; padding: 12px 16px; margin-bottom: 24px; border-radius: 4px;">
-        <p style="margin-top: 0;">Hi <strong>{{ reviewer_name }}</strong>, the consolidated newsletter is ready for your
-          review.</p>
-        <strong style="display: block; margin-top: 12px;">📝 How to provide feedback:</strong>
-        <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+        style="background: #e6fbf0; border-left: 4px solid #4CAF50; padding: 12px 16px; margin-bottom: 24px; font-family: Arial, sans-serif;">
+        <p style="margin-top: 0; font-size: 14px; color: #111;">Hi <strong>{{ reviewer_name }}</strong>, the
+          consolidated newsletter is ready for your review.</p>
+        <strong style="display: block; margin-top: 10px; font-size: 13px; color: #111;">📝 How to provide
+          feedback:</strong>
+        <ul style="margin: 5px 0 0 0; padding-left: 20px; font-size: 13px; color: #333;">
           <li><strong>Approve as-is:</strong> Reply with <strong>"Approved"</strong></li>
           <li><strong>Edit directly:</strong> Edit the newsletter text below in your reply and say <em>"I have made
-              changes in the email, please improve the language"</em></li>
-          <li><strong>Give instructions:</strong> Reply with your specific feedback and changes needed</li>
+              changes..."</em></li>
+          <li><strong>Give instructions:</strong> Reply with your specific feedback and changes needed.</li>
         </ul>
       </div>
       {% endif %}
 
+      <!-- The exact structure generated by the LLM gets inserted here -->
       {{ content | safe }}
+
     </div>
 
     <!-- Footer -->
     <div class="footer">
-      <div class="divider"></div>
-      <p>This newsletter was prepared by the AI Digital Employee</p>
-      <p>{{ date_full }} &bull; &copy; {{ year }}</p>
+      <p>Prepared autonomously by the AI Digital Employee</p>
+      <p>{{ date_full }} &bull; &copy; Boehringer Ingelheim {{ year }}</p>
     </div>
+
   </div>
 </body>
 
