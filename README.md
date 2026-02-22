@@ -28,6 +28,7 @@ An autonomous AI agent that manages the entire lifecycle of monthly client newsl
 | `./scripts/stop.sh` | `make stop` | Stop all services (Docker + local processes) |
 | — | `make logs` | Tail Docker Compose logs |
 | — | `make clean` | Remove containers, volumes, and build artifacts |
+| — | `make reset-db` | Wipe ONLY the PostgreSQL database for clean end-to-end testing |
 
 ---
 
@@ -38,7 +39,7 @@ An autonomous AI agent that manages the entire lifecycle of monthly client newsl
 | **Autonomous Email Agent** | Polls inbox, classifies replies, sends requests & reminders — zero manual intervention |
 | **LLM Content Engine** | OpenAI / Azure OpenAI rewording, consolidation, and feedback incorporation |
 | **Multi-Level Approvals** | Team leads approve their sections → Delivery leader approves the full newsletter |
-| **RAG Chat Interface** | Query past and current newsletters using natural language with source citations |
+| **Agentic AI Chatbot** | LangGraph Tool-calling Agent that dynamically queries *both* historical RAG data (pgvector) and live SQL Work-In-Progress drafts to answer complex comparative questions |
 | **Admin Control Panel** | Real-time dashboard, newsletter management, lead tracking, activity feed |
 | **Production-Ready Infra** | Helm charts for OpenShift, Docker Compose for local dev, HPA, health probes |
 
@@ -158,7 +159,7 @@ Edit `backend/.env` with your credentials:
 | `EMAIL_PASSWORD` | App password for the email account |
 | `IMAP_HOST` / `SMTP_HOST` | Mail server settings |
 | `ANUJ_EMAIL` | Delivery leader's email for approvals |
-| `CLIENT_EMAILS` | Comma-separated client recipient list |
+| `DISTRIBUTION_LIST` | Comma-separated recipient list (e.g. `"client1@ext.com, stakeholder@int.com"`) |
 
 ### 2. Quick Start (Docker Compose)
 
@@ -279,8 +280,8 @@ The chart includes:
 6. Once **all leads approve**, the LLM **consolidates** everything into one newsletter
 7. The consolidated newsletter is **sent to Anuj** for final review
 8. If Anuj gives feedback → LLM incorporates it and re-submits
-9. If Anuj approves → **newsletter goes to the client**
-10. The completed newsletter is **indexed into pgvector** for RAG queries
+9. If Anuj approves → **newsletter is broadcasted to the entire Distribution List**
+10. The completed newsletter is **indexed into pgvector** for RAG / Agent queries
 
 Reminders are sent automatically if leads don't respond within the configured window (default: 3 days, max 2 reminders).
 
