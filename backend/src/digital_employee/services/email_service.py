@@ -231,21 +231,42 @@ class EmailService:
     ) -> None:
         """Send a request for updates to a sub-workstream lead."""
         subject = f"{self._settings.newsletter_subject_prefix} Request for Updates — {programme} / {workstream}"
-        body_html = f"""
-        <html><body>
-        <p>Hi {lead_name},</p>
-        <p>We are preparing the <strong>{edition_title}</strong>.</p>
-        <p>Could you please share your updates for <strong>{programme} — {workstream}</strong>
-        covering the following areas:</p>
-        <ol>
-            <li><strong>Key Highlights</strong></li>
-            <li><strong>Delivery Updates</strong></li>
-            <li><strong>Innovation &amp; Value Add</strong></li>
-        </ol>
-        <p>Please reply to this email with your updates at your earliest convenience.</p>
-        <p>Thank you,<br/>{self._settings.app_name}</p>
-        </body></html>
-        """
+        
+        if programme.lower() == "quality" or workstream.lower() == "quality metrics":
+            body_html = f"""
+            <html><body>
+            <p>Hi {lead_name},</p>
+            <p>We are preparing the <strong>{edition_title}</strong>.</p>
+            <p>Could you please share the latest numbers for the <strong>Quality Dashboard</strong>
+            covering the following metrics:</p>
+            <ul>
+                <li><strong>Lean Projects Completed</strong></li>
+                <li><strong>GB Projects Completed</strong></li>
+                <li><strong>Lean Trained &amp; Tested</strong> (%)</li>
+                <li><strong>GB Trained &amp; Tested</strong> (%)</li>
+                <li><strong>Lean Certified</strong> (%)</li>
+                <li><strong>GB Certified</strong> (%)</li>
+            </ul>
+            <p>Please reply to this email with your updates at your earliest convenience.</p>
+            <p>Thank you,<br/>{self._settings.app_name}</p>
+            </body></html>
+            """
+        else:
+            body_html = f"""
+            <html><body>
+            <p>Hi {lead_name},</p>
+            <p>We are preparing the <strong>{edition_title}</strong>.</p>
+            <p>Could you please share your updates for <strong>{programme} — {workstream}</strong>
+            covering the following areas:</p>
+            <ul>
+                <li><strong>Key Highlights</strong></li>
+                <li><strong>Delivery Updates</strong></li>
+                <li><strong>Innovation &amp; Value Add</strong></li>
+            </ul>
+            <p>Please reply to this email with your updates at your earliest convenience.</p>
+            <p>Thank you,<br/>{self._settings.app_name}</p>
+            </body></html>
+            """
         self.send_email(lead_email, subject, body_html)
 
     def send_approval_request(
