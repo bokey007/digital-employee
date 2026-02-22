@@ -38,8 +38,10 @@ An autonomous AI agent that manages the entire lifecycle of monthly client newsl
 |---------|-------------|
 | **Autonomous Email Agent** | Polls inbox, classifies replies, sends requests & reminders — zero manual intervention |
 | **LLM Content Engine** | OpenAI / Azure OpenAI rewording, consolidation, and feedback incorporation |
+| **Dedicated Quality Dashboard Pipeline** | Automatically emails numerical metrics requests to the Quality lead and algorithmically maps their response directly into a bespoke HTML dashboard circle grid |
 | **Multi-Level Approvals** | Team leads approve their sections → Delivery leader approves the full newsletter |
 | **Agentic AI Chatbot** | LangGraph Tool-calling Agent that dynamically queries *both* historical RAG data (pgvector) and live SQL Work-In-Progress drafts to answer complex comparative questions |
+| **Premium SaaS Template** | Outlook-optimized HTML template rebuilt with a sleek, 10/10 magazine aesthetic (glassmorphism/box shadows, Segoe UI typography, Boehringer Ingelheim color palettes) |
 | **Admin Control Panel** | Real-time dashboard, newsletter management, lead tracking, activity feed |
 | **Production-Ready Infra** | Helm charts for OpenShift, Docker Compose for local dev, HPA, health probes |
 
