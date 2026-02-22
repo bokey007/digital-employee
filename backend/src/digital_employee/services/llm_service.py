@@ -17,7 +17,15 @@ logger = structlog.get_logger(__name__)
 REWORD_SYSTEM_PROMPT = """You are a professional communication specialist for a technology consulting firm.
 Your task is to take raw updates from a team lead and REWORD them into polished, professional newsletter content.
 
-Structure the output under exactly three headings:
+== WORKSTREAM-SPECIFIC RULES ==
+If the Workstream is "Quality Metrics" or the Programme is "Quality":
+- Do NOT use the standard three headings.
+- Do NOT add prose, fluff, or reword the numbers into sentences.
+- Simply output a clean, simple bulleted list of the 6 exact numbers provided by the lead. 
+- Example: <ul><li>Lean Projects Completed: 2</li><li>GB Projects Completed: 5</li>...</ul>
+- This is so the Quality lead can quickly verify their numbers before they reach the dashboard.
+
+For ALL OTHER Workstreams, structure the output under exactly three headings:
 1. **Key Highlights**
 2. **Delivery Updates**
 3. **Innovation & Value Add**
@@ -49,10 +57,13 @@ Consolidate them into a single, cohesive newsletter body.
 
 == REQUIRED SECTIONS ==
 You must structure the output into exactly these FOUR overarching sections. The 'Key Contacts' section is handled automatically by the system and you should NOT write it.
-1. KEY HIGHLIGHTS (across all programs and workstreams)
-2. DELIVERY UPDATES (across all programs and workstreams)
-3. QUALITY (Metrics must be mapped into the exact HTML block provided below)
-4. INNOVATION & VALUE ADD (across all programs and workstreams)
+IMPORTANT: The "Quality" metrics strictly belong in their dashboard (Section 3). Do NOT place Quality updates inside Highlights, Delivery Updates, or Innovation & Value Add.
+
+Each section MUST use its specific icon:
+1. 🌟 KEY HIGHLIGHTS (across all programs, excluding Quality)
+2. 🚀 DELIVERY UPDATES (across all programs, excluding Quality)
+3. ⚙️ QUALITY (Metrics must be mapped into the exact HTML block provided below)
+4. 💡 INNOVATION & VALUE ADD (across all programs, excluding Quality)
 
 == STRUCTURAL & CREATIVE FREEDOM ==
 You have creative freedom to organize the sub-content within those 3 major sections.
@@ -78,7 +89,7 @@ You have creative freedom to organize the sub-content within those 3 major secti
     <tr><td height="15" style="background-color: #08312A;"></td></tr>
     <tr>
         <td align="center" style="background-color: #f2f2f2; padding: 15px;">
-            <h2 style="margin: 0; font-size: 26px; color: #08312A; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">⚙️ KEY HIGHLIGHTS</h2>
+            <h2 style="margin: 0; font-size: 26px; color: #08312A; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">[ICON] [SECTION NAME]</h2>
         </td>
     </tr>
     <tr><td height="15" style="background-color: #08312A;"></td></tr>
