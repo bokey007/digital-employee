@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ title }}</title>
+  <style>
+    /* Reset */
+    body,
+    table,
+    td,
+    p,
+    a,
+    li {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 100% !important;
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+
+    table {
+      border-collapse: collapse;
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+    }
+
+    /* Container */
+    .email-container {
+      max-width: 680px;
+      margin: 0 auto;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #2D3748;
+      line-height: 1.6;
+    }
+
+    /* Header */
+    .header {
+      background-color: #08312A;
+      background: linear-gradient(135deg, #08312A 0%, #115e52 100%);
+      padding: 40px 32px;
+      text-align: center;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .header h1 {
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+
+    .header .date {
+      color: #80ebb8;
+      font-size: 14px;
+      margin-top: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .header .edition {
+      color: #00E47C;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    /* Body */
+    .body-content {
+      background: #ffffff;
+      padding: 32px;
+      border-left: 1px solid #e2e8f0;
+      border-right: 1px solid #e2e8f0;
+    }
+
+    /* Content styling */
+    .body-content h2 {
+      color: #08312A;
+      font-size: 22px;
+      font-weight: 700;
+      margin: 28px 0 12px 0;
+      padding-bottom: 8px;
+      border-bottom: 3px solid #00E47C;
+    }
+
+    .body-content h3 {
+      color: #115e52;
+      font-size: 18px;
+      font-weight: 600;
+      margin: 20px 0 8px 0;
+    }
+
+    .body-content h4 {
+      color: #4a5568;
+      font-size: 15px;
+      font-weight: 600;
+      margin: 16px 0 6px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .body-content p {
+      color: #4a5568;
+      font-size: 15px;
+      margin: 8px 0;
+    }
+
+    .body-content ul,
+    .body-content ol {
+      margin: 8px 0;
+      padding-left: 24px;
+    }
+
+    .body-content li {
+      color: #4a5568;
+      font-size: 15px;
+      margin: 4px 0;
+    }
+
+    .body-content strong {
+      color: #2D3748;
+    }
+
+    .body-content hr {
+      border: none;
+      border-top: 1px solid #e2e8f0;
+      margin: 24px 0;
+    }
+
+    /* Highlight box */
+    .highlight-box {
+      background: #e6fbf0;
+      border-left: 4px solid #00E47C;
+      padding: 16px;
+      margin: 16px 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* Footer */
+    .footer {
+      background: #f7fafc;
+      padding: 24px 32px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+      border-left: 1px solid #e2e8f0;
+      border-right: 1px solid #e2e8f0;
+      border-radius: 0 0 8px 8px;
+    }
+
+    .footer p {
+      color: #a0aec0;
+      font-size: 12px;
+      margin: 4px 0;
+    }
+
+    .footer .divider {
+      width: 40px;
+      height: 2px;
+      background: #cbd5e0;
+      margin: 12px auto;
+    }
+  </style>
+</head>
+
+<body style="background-color: #edf2f7; padding: 20px 0;">
+  <div class="email-container">
+    <!-- Header -->
+    <div class="header">
+      <h1>{{ title }}</h1>
+      <div class="date">{{ date }}</div>
+      {% if edition_number %}
+      <div class="edition">Edition #{{ edition_number }}</div>
+      {% endif %}
+    </div>
+
+    <!-- Body -->
+    <div class="body-content">
+      {% if anuj_instructions %}
+      <div
+        style="background: #f0fdf4; border-left: 4px solid #00E47C; padding: 12px 16px; margin-bottom: 24px; border-radius: 4px;">
+        <p style="margin-top: 0;">Hi <strong>{{ reviewer_name }}</strong>, the consolidated newsletter is ready for your
+          review.</p>
+        <strong style="display: block; margin-top: 12px;">📝 How to provide feedback:</strong>
+        <ul style="margin: 8px 0 0 0; padding-left: 20px;">
+          <li><strong>Approve as-is:</strong> Reply with <strong>"Approved"</strong></li>
+          <li><strong>Edit directly:</strong> Edit the newsletter text below in your reply and say <em>"I have made
+              changes in the email, please improve the language"</em></li>
+          <li><strong>Give instructions:</strong> Reply with your specific feedback and changes needed</li>
+        </ul>
+      </div>
+      {% endif %}
+
+      {{ content | safe }}
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="divider"></div>
+      <p>This newsletter was prepared by the AI Digital Employee</p>
+      <p>{{ date_full }} &bull; &copy; {{ year }}</p>
+    </div>
+  </div>
+</body>
+
+</html>

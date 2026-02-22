@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+env.bak/
+venv.bak/
+
+# Environment configurations
+.env
+.env.*
+!.env.example
+
+# Node/Vite
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Logs
+logs/
+*.log
+
+# Temp files
+*.bak
+*.swp
+*~
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Database
+*.sqlite3
+*.db
+pgdata/
+redisdata/

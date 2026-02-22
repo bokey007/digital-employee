@@ -1,0 +1,120 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Helm Values — Digital Employee
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Global ───────────────────────────────────────────────────────────────────
+namespace: digital-employee
+
+# ── Backend ──────────────────────────────────────────────────────────────────
+backend:
+  replicas: 2
+  image:
+    repository: your-registry/digital-employee-backend
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  port: 8000
+  env:
+    APP_ENV: production
+    LOG_LEVEL: INFO
+
+# ── Worker (Celery) ──────────────────────────────────────────────────────────
+worker:
+  replicas: 2
+  image:
+    repository: your-registry/digital-employee-backend
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  concurrency: 4
+
+# ── Frontend ─────────────────────────────────────────────────────────────────
+frontend:
+  replicas: 2
+  image:
+    repository: your-registry/digital-employee-frontend
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  port: 80
+
+# ── PostgreSQL (Bitnami sub-chart) ───────────────────────────────────────────
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: changeme
+    username: digital_employee
+    password: changeme
+    database: digital_employee
+  primary:
+    initdb:
+      scripts:
+        init-pgvector.sql: |
+          CREATE EXTENSION IF NOT EXISTS vector;
+    persistence:
+      size: 10Gi
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+
+# ── Redis (Bitnami sub-chart) ────────────────────────────────────────────────
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  master:
+    persistence:
+      size: 2Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+
+# ── Ingress / Route ──────────────────────────────────────────────────────────
+ingress:
+  enabled: false
+
+route:
+  enabled: true
+  host: digital-employee.apps.your-cluster.com
+  tls:
+    termination: edge
+
+# ── HPA ──────────────────────────────────────────────────────────────────────
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilization: 75
+
+# ── Secrets ──────────────────────────────────────────────────────────────────
+secrets:
+  openaiApiKey: ""
+  azureOpenaiApiKey: ""
+  emailPassword: ""
+  secretKey: ""

@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "digital-employee.fullname" . }}-config
+  labels:
+    {{- include "digital-employee.labels" . | nindent 4 }}
+data:
+  APP_NAME: "Digital Employee"
+  APP_ENV: {{ .Values.backend.env.APP_ENV | default "production" | quote }}
+  LOG_LEVEL: {{ .Values.backend.env.LOG_LEVEL | default "INFO" | quote }}
+  redis-url: "redis://{{ .Release.Name }}-redis-master:6379/0"
+  LLM_PROVIDER: "openai"
+  NEWSLETTER_SUBJECT_PREFIX: "[Monthly Newsletter]"
+  REMINDER_AFTER_DAYS: "3"
+  MAX_REMINDERS: "2"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "digital-employee.fullname" . }}-secrets
+  labels:
+    {{- include "digital-employee.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  database-url: "postgresql+asyncpg://{{ .Values.postgresql.auth.username }}:{{ .Values.postgresql.auth.password }}@{{ .Release.Name }}-postgresql:5432/{{ .Values.postgresql.auth.database }}"
+  database-url-sync: "postgresql+psycopg2://{{ .Values.postgresql.auth.username }}:{{ .Values.postgresql.auth.password }}@{{ .Release.Name }}-postgresql:5432/{{ .Values.postgresql.auth.database }}"
+  openai-api-key: {{ .Values.secrets.openaiApiKey | quote }}
+  secret-key: {{ .Values.secrets.secretKey | quote }}
+  email-password: {{ .Values.secrets.emailPassword | quote }}

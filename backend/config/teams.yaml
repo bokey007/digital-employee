@@ -1,0 +1,37 @@
+# ── Team / Programme Configuration ─────────────────────────────────────────
+#
+# Define your programmes, sub-workstreams, and the lead contacts for each.
+# The digital employee will email each lead when a newsletter cycle starts.
+
+programmes:
+  - name: "Data & Analytics"
+    workstreams:
+      - name: "Data Platform"
+        lead_name: "Sarala Deshmukh"
+        lead_email: "sarala.arvind.deshmukh@gmail.com"
+      - name: "BI & Reporting"
+        lead_name: "Rohit Kumar"
+        lead_email: "sudhir.admi.team@gmail.com"
+        # lead_email: "rohit.kumar@yourorg.com"
+
+  # - name: "Cloud Modernisation"
+  #   workstreams:
+  #     - name: "Infrastructure Migration"
+  #       lead_name: "Anita Desai"
+  #       lead_email: "sudhir.admi.team@gmail.com"
+  #       # lead_email: "anita.desai@yourorg.com"
+  #     - name: "Application Modernisation"
+  #       lead_name: "Vikram Patel"
+  #       lead_email: "sudhir.admi.team@gmail.com"
+  #       # lead_email: "vikram.patel@yourorg.com"
+
+  # - name: "Digital Engineering"
+  #   workstreams:
+  #     - name: "Frontend Development"
+  #       lead_name: "Neha Gupta"
+  #       lead_email: "sudhir.admi.team@gmail.com"
+  #       # lead_email: "neha.gupta@yourorg.com"
+  #     - name: "API & Microservices"
+  #       lead_name: "Suresh Reddy"
+  #       lead_email: "sudhir.admi.team@gmail.com"
+  #       # lead_email: "suresh.reddy@yourorg.com"

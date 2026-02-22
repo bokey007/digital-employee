@@ -1,0 +1,115 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Docker Compose — Local Development
+# ─────────────────────────────────────────────────────────────────────────────
+version: "3.9"
+
+services:
+  # ── PostgreSQL (with pgvector) ─────────────────────────────────────────────
+  postgresql:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: digital_employee
+      POSTGRES_USER: digital_employee
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U digital_employee"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ──────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend API ────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://digital_employee:secret@postgresql:5432/digital_employee
+      DATABASE_URL_SYNC: postgresql+psycopg2://digital_employee:secret@postgresql:5432/digital_employee
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/templates:/app/templates
+      - ./backend/config:/app/config
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn digital_employee.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ── Celery Worker ──────────────────────────────────────────────────────────
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://digital_employee:secret@postgresql:5432/digital_employee
+      DATABASE_URL_SYNC: postgresql+psycopg2://digital_employee:secret@postgresql:5432/digital_employee
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/templates:/app/templates
+      - ./backend/config:/app/config
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A digital_employee.tasks.celery_app worker --loglevel=info --concurrency=2
+
+  # ── Celery Beat (Scheduler) ────────────────────────────────────────────────
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://digital_employee:secret@postgresql:5432/digital_employee
+      DATABASE_URL_SYNC: postgresql+psycopg2://digital_employee:secret@postgresql:5432/digital_employee
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./backend/src:/app/src
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A digital_employee.tasks.celery_app beat --loglevel=info
+
+  # ── Frontend ───────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  redisdata:

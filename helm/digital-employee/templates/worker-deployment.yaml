@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "digital-employee.fullname" . }}-worker
+  labels:
+    {{- include "digital-employee.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.worker.replicas }}
+  selector:
+    matchLabels:
+      {{- include "digital-employee.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels:
+        {{- include "digital-employee.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: worker
+    spec:
+      containers:
+        - name: worker
+          image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
+          imagePullPolicy: {{ .Values.worker.image.pullPolicy }}
+          command: ["celery", "-A", "digital_employee.tasks.celery_app", "worker", "--loglevel=info", "--concurrency={{ .Values.worker.concurrency }}"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "digital-employee.fullname" . }}-secrets
+                  key: database-url
+            - name: DATABASE_URL_SYNC
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "digital-employee.fullname" . }}-secrets
+                  key: database-url-sync
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "digital-employee.fullname" . }}-config
+                  key: redis-url
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "digital-employee.fullname" . }}-secrets
+                  key: openai-api-key
+          envFrom:
+            - configMapRef:
+                name: {{ include "digital-employee.fullname" . }}-config
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+---
+# Celery Beat (single replica — scheduler)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "digital-employee.fullname" . }}-beat
+  labels:
+    {{- include "digital-employee.labels" . | nindent 4 }}
+    app.kubernetes.io/component: beat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "digital-employee.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: beat
+  template:
+    metadata:
+      labels:
+        {{- include "digital-employee.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: beat
+    spec:
+      containers:
+        - name: beat
+          image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
+          imagePullPolicy: {{ .Values.worker.image.pullPolicy }}
+          command: ["celery", "-A", "digital_employee.tasks.celery_app", "beat", "--loglevel=info"]
+          env:
+            - name: DATABASE_URL_SYNC
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "digital-employee.fullname" . }}-secrets
+                  key: database-url-sync
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "digital-employee.fullname" . }}-config
+                  key: redis-url
+          envFrom:
+            - configMapRef:
+                name: {{ include "digital-employee.fullname" . }}-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
