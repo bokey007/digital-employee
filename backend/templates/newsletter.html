@@ -21,7 +21,7 @@
       width: 100% !important;
       -webkit-text-size-adjust: 100%;
       -ms-text-size-adjust: 100%;
-      background-color: #ffffff;
+      background-color: #f4f5f7;
     }
 
     table {
@@ -34,39 +34,38 @@
     .email-container {
       max-width: 900px;
       margin: 0 auto;
-      font-family: Calibri, 'Segoe UI', Arial, sans-serif;
-      color: #000000;
-      line-height: 1.4;
+      font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+      color: #333333;
+      line-height: 1.5;
+      background-color: #ffffff;
+      border: 1px solid #e0e0e0;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     }
 
     /* Top BI Header Banner */
     .header-banner {
       background-color: #08312A;
-      padding: 0;
-      text-align: center;
-      border: 1px solid #08312A;
-    }
-
-    .header-banner img {
-      display: block;
-      margin: 0 auto;
+      padding: 35px 40px;
+      text-align: left;
+      border-bottom: 4px solid #00E47C;
     }
 
     /* Sub Navigation */
     .sub-nav {
-      background-color: #f2f2f2;
-      padding: 15px 10px;
+      background-color: #ffffff;
+      padding: 16px 10px;
       text-align: center;
-      border-left: 1px solid #08312A;
-      border-right: 1px solid #08312A;
+      border-bottom: 1px solid #E5E3DE;
     }
 
     .sub-nav a {
-      color: #0070C0;
+      color: #08312A;
       text-decoration: none;
-      font-size: 14px;
-      margin: 0 15px;
-      font-weight: bold;
+      font-size: 13px;
+      margin: 0 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     /* Body Wrapper */
@@ -76,16 +75,10 @@
 
     /* Footer */
     .footer {
-      background: #E5E3DE;
-      padding: 24px 32px;
+      background: #f8f9fa;
+      padding: 40px 30px;
       text-align: center;
-      border-top: 4px solid #08312A;
-    }
-
-    .footer p {
-      color: #08312A;
-      font-size: 12px;
-      margin: 4px 0;
+      border-top: 1px solid #E5E3DE;
     }
   </style>
 </head>
@@ -95,10 +88,21 @@
 
     <!-- Header -->
     <div class="header-banner">
-      <!-- Just simulated logo/header area -->
-      <table border="0" cellpadding="0" cellspacing="0" width="100%">
+      <table width="100%" border="0" cellpadding="0" cellspacing="0">
         <tr>
-          <td height="50" style="background: #08312A;"></td>
+          <td valign="middle" align="left">
+            <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 300; letter-spacing: 1.5px;">BOEHRINGER
+              INGELHEIM</h1>
+            <p
+              style="color: #00E47C; margin: 6px 0 0 0; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">
+              Information Management Shared Services</p>
+          </td>
+          <td valign="middle" align="right">
+            <p style="color: #E5E3DE; margin: 0; font-size: 12px; font-style: italic;">Published: {{ date_full }}</p>
+            <p
+              style="color: #ffffff; margin: 4px 0 0 0; font-size: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+              {{ title }}</p>
+          </td>
         </tr>
       </table>
     </div>
@@ -163,7 +167,7 @@
         <!-- Row 1 Contacts -->
         <tr>
           <td width="12.5%" align="center" valign="top"
-            style="padding: 20px 2px 10px 2px; border-right: 1px dotted #ccc; border-bottom: 1px dotted #ccc;">
+            style="padding: 20px 2px 10px 2px; border-right: 1px solid #E5E3DE; border-bottom: 1px solid #E5E3DE;">
             <img
               src="https://ui-avatars.com/api/?name=Carmen+Profeta&background=E5E3DE&color=08312A&rounded=true&font-size=0.4"
               width="60" height="60"
@@ -173,7 +177,7 @@
             <p style="margin: 2px 0 0 0; font-size: 9px; color: #333; line-height: 1.2;">Boehringer Lead</p>
           </td>
           <td width="12.5%" align="center" valign="top"
-            style="padding: 20px 2px 10px 2px; border-right: 1px dotted #ccc; border-bottom: 1px dotted #ccc;">
+            style="padding: 20px 2px 10px 2px; border-right: 1px solid #E5E3DE; border-bottom: 1px solid #E5E3DE;">
             <img
               src="https://ui-avatars.com/api/?name=Anuj+Sharma&background=E5E3DE&color=08312A&rounded=true&font-size=0.4"
               width="60" height="60"
@@ -183,7 +187,7 @@
             <p style="margin: 2px 0 0 0; font-size: 9px; color: #333; line-height: 1.2;">Shared Services Lead</p>
           </td>
           <td width="12.5%" align="center" valign="top"
-            style="padding: 20px 2px 10px 2px; border-right: 1px dotted #ccc; border-bottom: 1px dotted #ccc;">
+            style="padding: 20px 2px 10px 2px; border-right: 1px solid #E5E3DE; border-bottom: 1px solid #E5E3DE;">
             <img
               src="https://ui-avatars.com/api/?name=Venkata+Ragi&background=E5E3DE&color=08312A&rounded=true&font-size=0.4"
               width="60" height="60"
@@ -193,7 +197,7 @@
             <p style="margin: 2px 0 0 0; font-size: 9px; color: #333; line-height: 1.2;">Leadership Reporting</p>
           </td>
           <td width="12.5%" align="center" valign="top"
-            style="padding: 20px 2px 10px 2px; border-right: 1px dotted #ccc; border-bottom: 1px dotted #ccc;">
+            style="padding: 20px 2px 10px 2px; border-right: 1px solid #E5E3DE; border-bottom: 1px solid #E5E3DE;">
             <img
               src="https://ui-avatars.com/api/?name=Shyam+Munde&background=E5E3DE&color=08312A&rounded=true&font-size=0.4"
               width="60" height="60"
@@ -203,7 +207,7 @@
             <p style="margin: 2px 0 0 0; font-size: 9px; color: #333; line-height: 1.2;">Offshore Program Manager</p>
           </td>
           <td width="12.5%" align="center" valign="top"
-            style="padding: 20px 2px 10px 2px; border-right: 1px dotted #ccc; border-bottom: 1px dotted #ccc;">
+            style="padding: 20px 2px 10px 2px; border-right: 1px solid #E5E3DE; border-bottom: 1px solid #E5E3DE;">
             <img
               src="https://ui-avatars.com/api/?name=Vimal+Gunasekaran&background=E5E3DE&color=08312A&rounded=true&font-size=0.4"
               width="60" height="60"
@@ -213,7 +217,7 @@
             <p style="margin: 2px 0 0 0; font-size: 9px; color: #333; line-height: 1.2;">Digital Program Lead</p>
           </td>
           <td width="12.5%" align="center" valign="top"
-            style="padding: 20px 2px 10px 2px; border-right: 1px dotted #ccc; border-bottom: 1px dotted #ccc;">
+            style="padding: 20px 2px 10px 2px; border-right: 1px solid #E5E3DE; border-bottom: 1px solid #E5E3DE;">
             <img
               src="https://ui-avatars.com/api/?name=Harish+Nagaraj&background=E5E3DE&color=08312A&rounded=true&font-size=0.4"
               width="60" height="60"
@@ -224,7 +228,7 @@
               Lead</p>
           </td>
           <td width="12.5%" align="center" valign="top"
-            style="padding: 20px 2px 10px 2px; border-right: 1px dotted #ccc; border-bottom: 1px dotted #ccc;">
+            style="padding: 20px 2px 10px 2px; border-right: 1px solid #E5E3DE; border-bottom: 1px solid #E5E3DE;">
             <img
               src="https://ui-avatars.com/api/?name=Neha+Shejwalkar&background=E5E3DE&color=08312A&rounded=true&font-size=0.4"
               width="60" height="60"
@@ -234,7 +238,7 @@
             <p style="margin: 2px 0 0 0; font-size: 9px; color: #333; line-height: 1.2;">Specialty Program Lead</p>
           </td>
           <td width="12.5%" align="center" valign="top"
-            style="padding: 20px 2px 10px 2px; border-bottom: 1px dotted #ccc;">
+            style="padding: 20px 2px 10px 2px; border-bottom: 1px solid #E5E3DE;">
             <img
               src="https://ui-avatars.com/api/?name=Gaurav+Mahajan&background=E5E3DE&color=08312A&rounded=true&font-size=0.4"
               width="60" height="60"
@@ -247,7 +251,7 @@
         <!-- Row 2 Contacts -->
         <tr>
           <td width="12.5%" align="center" valign="top"
-            style="padding: 20px 2px 20px 2px; border-right: 1px dotted #ccc;">
+            style="padding: 20px 2px 20px 2px; border-right: 1px solid #E5E3DE;">
             <img
               src="https://ui-avatars.com/api/?name=Shubhansh+Jain&background=E5E3DE&color=08312A&rounded=true&font-size=0.4"
               width="60" height="60"
@@ -257,7 +261,7 @@
             <p style="margin: 2px 0 0 0; font-size: 9px; color: #333; line-height: 1.2;">Value Access</p>
           </td>
           <td width="12.5%" align="center" valign="top"
-            style="padding: 20px 2px 20px 2px; border-right: 1px dotted #ccc;">
+            style="padding: 20px 2px 20px 2px; border-right: 1px solid #E5E3DE;">
             <img
               src="https://ui-avatars.com/api/?name=Barkha+Arora&background=E5E3DE&color=08312A&rounded=true&font-size=0.4"
               width="60" height="60"
@@ -267,7 +271,7 @@
             <p style="margin: 2px 0 0 0; font-size: 9px; color: #333; line-height: 1.2;">Digital PEP</p>
           </td>
           <td width="12.5%" align="center" valign="top"
-            style="padding: 20px 2px 20px 2px; border-right: 1px dotted #ccc;">
+            style="padding: 20px 2px 20px 2px; border-right: 1px solid #E5E3DE;">
             <img
               src="https://ui-avatars.com/api/?name=Arvind+Sekar&background=E5E3DE&color=08312A&rounded=true&font-size=0.4"
               width="60" height="60"
@@ -277,7 +281,7 @@
             <p style="margin: 2px 0 0 0; font-size: 9px; color: #333; line-height: 1.2;">MCE, Account &amp; Medical</p>
           </td>
           <td width="12.5%" align="center" valign="top"
-            style="padding: 20px 2px 20px 2px; border-right: 1px dotted #ccc;">
+            style="padding: 20px 2px 20px 2px; border-right: 1px solid #E5E3DE;">
             <img
               src="https://ui-avatars.com/api/?name=Fredrick+R&background=E5E3DE&color=08312A&rounded=true&font-size=0.4"
               width="60" height="60"
@@ -288,7 +292,7 @@
               Service</p>
           </td>
           <td width="12.5%" align="center" valign="top"
-            style="padding: 20px 2px 20px 2px; border-right: 1px dotted #ccc;">
+            style="padding: 20px 2px 20px 2px; border-right: 1px solid #E5E3DE;">
             <img
               src="https://ui-avatars.com/api/?name=Ninad+Joshi&background=E5E3DE&color=08312A&rounded=true&font-size=0.4"
               width="60" height="60"
@@ -298,7 +302,7 @@
             <p style="margin: 2px 0 0 0; font-size: 9px; color: #333; line-height: 1.2;">Primary Care</p>
           </td>
           <td width="12.5%" align="center" valign="top"
-            style="padding: 20px 2px 20px 2px; border-right: 1px dotted #ccc;">
+            style="padding: 20px 2px 20px 2px; border-right: 1px solid #E5E3DE;">
             <img
               src="https://ui-avatars.com/api/?name=Suhas+Sundar&background=E5E3DE&color=08312A&rounded=true&font-size=0.4"
               width="60" height="60"
@@ -308,7 +312,7 @@
             <p style="margin: 2px 0 0 0; font-size: 9px; color: #333; line-height: 1.2;">IPF ILD Reporting</p>
           </td>
           <td width="12.5%" align="center" valign="top"
-            style="padding: 20px 2px 20px 2px; border-right: 1px dotted #ccc;">
+            style="padding: 20px 2px 20px 2px; border-right: 1px solid #E5E3DE;">
             <img
               src="https://ui-avatars.com/api/?name=Navdeep+Sharma&background=E5E3DE&color=08312A&rounded=true&font-size=0.4"
               width="60" height="60"
@@ -340,10 +344,15 @@
 
     <!-- Footer -->
     <div class="footer">
-      <p>Prepared autonomously by the AI Digital Employee on {{ date_full }}</p>
-      <p>&copy; Boehringer Ingelheim {{ year }}</p>
-      <p style="margin-top: 10px; font-weight: bold; color: #000; font-size: 14px;">More updates to follow in {{ date }}
-        Edition!</p>
+      <p style="color: #666666; font-size: 13px; margin: 0 0 8px 0;">Prepared autonomously by the <strong>AI Digital
+          Employee</strong> on {{ date_full }}</p>
+      <p style="color: #999999; font-size: 12px; margin: 0;">&copy; Boehringer Ingelheim {{ year }}. All rights
+        reserved.</p>
+      <div style="margin-top: 25px; padding-top: 25px; border-top: 1px dashed #dddddd;">
+        <p
+          style="margin: 0; font-weight: bold; color: #08312A; font-size: 15px; text-transform: uppercase; letter-spacing: 0.5px;">
+          More updates to follow in the {{ date }} Edition</p>
+      </div>
     </div>
 
   </div>
