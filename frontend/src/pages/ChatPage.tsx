@@ -112,14 +112,19 @@ export default function ChatPage() {
                                 <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                             ) : (
                                 <div className="text-sm prose prose-sm max-w-none 
-                                    prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 
                                     prose-headings:text-brand-900 prose-headings:my-2
                                     prose-strong:text-brand-800 prose-strong:font-semibold">
-                                    {msg.content.split('\n').map((line, idx) => (
-                                        <ReactMarkdown key={idx} remarkPlugins={[remarkGfm, remarkBreaks]}>
-                                            {line}
-                                        </ReactMarkdown>
-                                    ))}
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkGfm, remarkBreaks]}
+                                        components={{
+                                            p: ({ node, ...props }) => <p className="mb-3 last:mb-0 leading-relaxed" {...props} />,
+                                            ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-3 space-y-1" {...props} />,
+                                            ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-3 space-y-1" {...props} />,
+                                            li: ({ node, ...props }) => <li className="leading-relaxed" {...props} />,
+                                        }}
+                                    >
+                                        {msg.content}
+                                    </ReactMarkdown>
                                 </div>
                             )}
                             {msg.sources && msg.sources.length > 0 && (
