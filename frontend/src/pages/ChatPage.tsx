@@ -117,10 +117,15 @@ export default function ChatPage() {
                                     <ReactMarkdown
                                         remarkPlugins={[remarkGfm, remarkBreaks]}
                                         components={{
-                                            p: ({ node, ...props }) => <p className="mb-3 last:mb-0 leading-relaxed" {...props} />,
-                                            ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-3 space-y-1" {...props} />,
-                                            ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-3 space-y-1" {...props} />,
+                                            p: ({ node, ...props }) => <p className="mb-3 last:mb-0 leading-relaxed text-gray-800" {...props} />,
+                                            ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-3 space-y-1.5 text-gray-800" {...props} />,
+                                            ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-3 space-y-1.5 text-gray-800" {...props} />,
                                             li: ({ node, ...props }) => <li className="leading-relaxed" {...props} />,
+                                            h1: ({ node, ...props }) => <h1 className="text-xl font-bold text-brand-900 mb-4 mt-6 first:mt-0" {...props} />,
+                                            h2: ({ node, ...props }) => <h2 className="text-lg font-bold text-brand-900 mb-3 mt-5 first:mt-0" {...props} />,
+                                            h3: ({ node, ...props }) => <h3 className="text-base font-semibold text-brand-800 mb-2 mt-4 first:mt-0" {...props} />,
+                                            strong: ({ node, ...props }) => <strong className="font-semibold text-gray-900" {...props} />,
+                                            a: ({ node, ...props }) => <a className="text-brand-600 hover:text-brand-700 underline underline-offset-2" {...props} />
                                         }}
                                     >
                                         {msg.content}
