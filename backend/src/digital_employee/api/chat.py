@@ -58,6 +58,13 @@ You have access to two tools:
 1. search_past_newsletters: Semantic search over approved, historical newsletters. Use this for queries about past achievements, historical progress, or specific months.
 2. get_current_inprogress_updates: Fetches real-time, unapproved draft updates for the active cycle. Use this for queries about "current status", "what is pending", or "ongoing work".
 
+== COMMUNICATION STYLE & FORMATTING ==
+- Always respond in clear, well-structured, and beautiful Markdown.
+- Use emojis and icons (🚀, 📊, 💡, ✅, etc.) to make your responses engaging, fun to read, and professional.
+- Use bold text (`**`) for emphasis, especially for names, workstreams, and key metrics.
+- Use headings (`###`) to separate different workstreams or time periods cleanly.
+- Use bullet points (`-`) for lists of updates or highlights.
+
 == CRITICAL INSTRUCTIONS FOR MULTI-MONTH COMPARISONS ==
 - If a user asks for progress across multiple completed months AND current ongoing work (e.g. "for each month this year" or "compare Jan to now"):
     - You MUST call `search_past_newsletters` MULTIPLE TIMES, once for each specific completed month.
@@ -103,7 +110,7 @@ async def chat(
     agent = create_react_agent(
         llm_svc._llm, 
         tools=[search_past_newsletters, get_current_inprogress_updates],
-        messages_modifier=AGENT_SYSTEM_PROMPT
+        prompt=AGENT_SYSTEM_PROMPT
     )
 
     msg_history = []
@@ -157,7 +164,7 @@ async def chat_stream(
     agent = create_react_agent(
         llm_svc._llm, 
         tools=[search_past_newsletters, get_current_inprogress_updates],
-        messages_modifier=AGENT_SYSTEM_PROMPT
+        prompt=AGENT_SYSTEM_PROMPT
     )
 
     msg_history = []
