@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { Send, Bot, User, Sparkles, RefreshCw } from 'lucide-react'
 import { chatApi } from '../api/client'
 import type { ChatMessage, ChatSource } from '../types'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 export default function ChatPage() {
     const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -105,7 +107,18 @@ export default function ChatPage() {
                                 : 'bg-gray-100 text-gray-800 rounded-bl-md'
                                 }`}
                         >
-                            <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                            {msg.role === 'user' ? (
+                                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                            ) : (
+                                <div className="text-sm prose prose-sm max-w-none 
+                                    prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 
+                                    prose-headings:text-brand-900 prose-headings:my-2
+                                    prose-strong:text-brand-800">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {msg.content}
+                                    </ReactMarkdown>
+                                </div>
+                            )}
                             {msg.sources && msg.sources.length > 0 && (
                                 <div className="mt-2 pt-2 border-t border-gray-200/50">
                                     <p className="text-[10px] uppercase tracking-wide text-gray-500 mb-1">Sources</p>
