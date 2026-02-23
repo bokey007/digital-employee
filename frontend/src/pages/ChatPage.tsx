@@ -115,9 +115,11 @@ export default function ChatPage() {
                                     prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 
                                     prose-headings:text-brand-900 prose-headings:my-2
                                     prose-strong:text-brand-800 prose-strong:font-semibold">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                                        {msg.content.replace(/(?<!\n)\n(?!\n)/g, '\n\n')}
-                                    </ReactMarkdown>
+                                    {msg.content.split('\n').map((line, idx) => (
+                                        <ReactMarkdown key={idx} remarkPlugins={[remarkGfm, remarkBreaks]}>
+                                            {line}
+                                        </ReactMarkdown>
+                                    ))}
                                 </div>
                             )}
                             {msg.sources && msg.sources.length > 0 && (
