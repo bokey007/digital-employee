@@ -4,6 +4,7 @@ import { chatApi } from '../api/client'
 import type { ChatMessage, ChatSource } from '../types'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkBreaks from 'remark-breaks'
 
 export default function ChatPage() {
     const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -113,8 +114,8 @@ export default function ChatPage() {
                                 <div className="text-sm prose prose-sm max-w-none 
                                     prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 
                                     prose-headings:text-brand-900 prose-headings:my-2
-                                    prose-strong:text-brand-800">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    prose-strong:text-brand-800 prose-strong:font-semibold">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
                                         {msg.content}
                                     </ReactMarkdown>
                                 </div>
