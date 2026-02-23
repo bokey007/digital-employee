@@ -103,7 +103,7 @@ async def chat(
     agent = create_react_agent(
         llm_svc._llm, 
         tools=[search_past_newsletters, get_current_inprogress_updates],
-        state_modifier=AGENT_SYSTEM_PROMPT
+        messages_modifier=AGENT_SYSTEM_PROMPT
     )
 
     msg_history = []
@@ -157,7 +157,7 @@ async def chat_stream(
     agent = create_react_agent(
         llm_svc._llm, 
         tools=[search_past_newsletters, get_current_inprogress_updates],
-        state_modifier=AGENT_SYSTEM_PROMPT
+        messages_modifier=AGENT_SYSTEM_PROMPT
     )
 
     msg_history = []
