@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from digital_employee.api.router import api_router
@@ -14,6 +15,7 @@ from digital_employee.database import close_db, init_db
 from digital_employee.services.notification import ws_manager
 from digital_employee.settings import get_settings
 from digital_employee.utils.logging import setup_logging
+import os
 
 logger = structlog.get_logger(__name__)
 
@@ -59,6 +61,11 @@ def create_app() -> FastAPI:
 
     # Mount API routes
     app.include_router(api_router)
+
+    # Mount static files for avatars
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    os.makedirs(static_dir, exist_ok=True)
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
     # Health checks
     @app.get("/healthz", tags=["health"])
