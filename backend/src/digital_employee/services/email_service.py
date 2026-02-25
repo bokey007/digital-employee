@@ -309,6 +309,37 @@ class EmailService:
         subject = f"{self._settings.newsletter_subject_prefix} {edition_title} — For Your Review"
         self.send_email(reviewer_email, subject, newsletter_html)
 
+    def send_programme_section_for_review(
+        self,
+        programme_lead_email: str,
+        programme_lead_name: str,
+        programme: str,
+        section_html: str,
+        edition_title: str,
+    ) -> None:
+        """Send a programme's consolidated section to the programme lead for approval.
+
+        This is the intermediate review that happens after all workstream leads
+        in a multi-workstream programme have approved their individual sections.
+        """
+        subject = f"{self._settings.newsletter_subject_prefix} {edition_title} — {programme} Section: Awaiting Your Approval"
+        body_html = f"""
+        <html><body>
+        <p>Hi {programme_lead_name},</p>
+        <p>The workstream leads for <strong>{programme}</strong> have all approved their sections.
+        Below is the consolidated content for your programme that will go into the
+        <strong>{edition_title}</strong>.</p>
+        <p>Please review the content below and reply with <strong>"Approved"</strong>
+        if it looks good, or share any changes you'd like incorporated.</p>
+        <hr/>
+        {section_html}
+        <hr/>
+        <p>Thank you,<br/>{self._settings.app_name}</p>
+        </body></html>
+        """
+        self.send_email(programme_lead_email, subject, body_html)
+
+
     def send_newsletter_to_client(
         self,
         distribution_list: list[str],

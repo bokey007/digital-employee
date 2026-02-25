@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any, TypedDict
-
-from langgraph.graph import add_messages
+from typing import TypedDict
 
 
 class LeadData(TypedDict):
@@ -18,6 +16,7 @@ class LeadData(TypedDict):
     reworded_content: str | None
     status: str  # pending | received | reworded | approval_sent | approved | changes_requested
     reminder_count: int
+    is_single_workstream_programme: bool  # true if this lead represents a solo-workstream programme
 
 
 class WorkflowState(TypedDict):
@@ -37,11 +36,17 @@ class WorkflowState(TypedDict):
     leads: dict[str, LeadData]  # email -> LeadData
     current_lead_email: str | None  # Lead being processed right now
 
+    # Programme lead approval tracking
+    # Maps programme_name -> {"email", "name", "status": pending|approved|feedback, "feedback": str|None}
+    programme_leads: dict[str, dict]
+
     # Newsletter content
     newsletter_html: str | None
 
-    # Anuj review
+    # Reviewer feedback
     anuj_feedback: str | None
+    ashwin_feedback: str | None  # new
+
     attempt_count: int
 
     # Error tracking

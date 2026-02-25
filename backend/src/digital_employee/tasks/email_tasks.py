@@ -96,6 +96,21 @@ def _build_workflow_context(session) -> str:
     return "\n".join(lines)
 
 
+def _get_programme_lead_emails() -> set[str]:
+    """Return a set of all programme lead emails from teams.yaml."""
+    import yaml, os
+    teams_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "config", "teams.yaml")
+    prog_leads = set()
+    if os.path.exists(teams_path):
+        with open(teams_path) as f:
+            teams = yaml.safe_load(f)
+        for prog in teams.get("programmes", []):
+            email = prog.get("programme_lead_email")
+            if email:
+                prog_leads.add(email.lower())
+    return prog_leads
+
+
 @celery_app.task(name="digital_employee.tasks.email_tasks.poll_inbox")
 def poll_inbox() -> dict:
     """Poll the inbox and process EVERY email through the LLM brain.
@@ -154,18 +169,48 @@ def poll_inbox() -> dict:
             # ── Route based on LLM intent ──────────────────────────────
             from digital_employee.tasks.workflow_tasks import (
                 handle_anuj_reply,
+                handle_ashwin_reply,
                 handle_lead_reply,
+                handle_programme_lead_reply,
                 handle_general_email,
             )
 
+            sender = email_msg.from_addr.lower()
+            programme_lead_emails = _get_programme_lead_emails()
+
             if intent in ("newsletter_content", "newsletter_approval", "newsletter_changes"):
-                handle_lead_reply.delay(
-                    sender_email=email_msg.from_addr,
-                    sender_name=email_msg.from_name,
-                    intent=intent,
-                    body_text=extracted,
-                    subject=email_msg.subject,
-                )
+                # Determine who is sending this — programme lead, Ashwin, Anuj, or workstream lead
+                if sender == settings.anuj_email.lower():
+                    # Anuj sending newsletter-related reply — treat as anuj_approval/feedback
+                    anuj_intent = "anuj_approval" if intent == "newsletter_approval" else "anuj_feedback"
+                    handle_anuj_reply.delay(
+                        intent=anuj_intent,
+                        body_text=extracted,
+                        subject=email_msg.subject,
+                    )
+                elif settings.ashwin_email and sender == settings.ashwin_email.lower():
+                    ashwin_intent = "newsletter_approval" if intent == "newsletter_approval" else "newsletter_feedback"
+                    handle_ashwin_reply.delay(
+                        intent=ashwin_intent,
+                        body_text=extracted,
+                        subject=email_msg.subject,
+                    )
+                elif sender in programme_lead_emails:
+                    handle_programme_lead_reply.delay(
+                        sender_email=email_msg.from_addr,
+                        sender_name=email_msg.from_name,
+                        intent=intent,
+                        body_text=extracted,
+                        subject=email_msg.subject,
+                    )
+                else:
+                    handle_lead_reply.delay(
+                        sender_email=email_msg.from_addr,
+                        sender_name=email_msg.from_name,
+                        intent=intent,
+                        body_text=extracted,
+                        subject=email_msg.subject,
+                    )
             elif intent in ("anuj_approval", "anuj_feedback"):
                 handle_anuj_reply.delay(
                     intent=intent,
@@ -176,7 +221,6 @@ def poll_inbox() -> dict:
                 logger.info("spam_ignored", sender=email_msg.from_addr)
             else:
                 # newsletter_question, out_of_scope, or anything else
-                # The LLM guardrails ensure out_of_scope gets a polite decline
                 handle_general_email.delay(
                     sender_email=email_msg.from_addr,
                     sender_name=email_msg.from_name,
@@ -310,8 +354,8 @@ def check_and_send_reminders() -> dict:
             logger.error("skip_notification_failed", error=str(exc))
 
         # Trigger consolidation check — skipped + approved = proceed
-        from digital_employee.tasks.workflow_tasks import _check_and_consolidate
-        _check_and_consolidate(session, edition, settings)
+        from digital_employee.tasks.workflow_tasks import _check_and_route_after_lead_approvals
+        _check_and_route_after_lead_approvals(session, edition, settings)
 
     session.commit()
     session.close()

@@ -67,6 +67,8 @@ class Settings(BaseSettings):
     # ── Recipients ───────────────────────────────────────────────────────────
     anuj_email: str = ""
     anuj_name: str = "Anuj"
+    ashwin_email: str = ""
+    ashwin_name: str = "Ashwin"
     distribution_list_raw: str = Field(default="", alias="DISTRIBUTION_LIST")
 
     @property

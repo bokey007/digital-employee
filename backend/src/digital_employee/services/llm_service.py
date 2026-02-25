@@ -363,19 +363,31 @@ class LLMService:
         """Consolidate all approved sections into a single newsletter body.
 
         Args:
-            sections: List of dicts with keys: programme, workstream, lead_name, content
+            sections: List of dicts with keys: programme, workstream, lead_name,
+                      content, is_single_workstream (bool)
+
+        For single-workstream programmes, the workstream heading is suppressed
+        in the newsletter — only the programme heading is shown.
         """
         sections_text = "\n\n---\n\n".join(
             f"Programme: {s['programme']}\n"
-            f"Workstream: {s['workstream']}\n"
-            f"Lead: {s['lead_name']}\n\n"
-            f"{s['content']}"
+            + (f"Workstream: {s['workstream']}\n" if not s.get("is_single_workstream") else "")
+            + f"Lead: {s['lead_name']}\n"
+            + f"Suppress workstream heading: {'YES' if s.get('is_single_workstream') else 'NO'}\n\n"
+            + f"{s['content']}"
             for s in sections
         )
 
         messages = [
             SystemMessage(content=CONSOLIDATE_SYSTEM_PROMPT),
-            HumanMessage(content=f"Approved sections:\n\n{sections_text}"),
+            HumanMessage(content=(
+                "Approved sections:\n\n"
+                f"{sections_text}\n\n"
+                "IMPORTANT: For any section marked 'Suppress workstream heading: YES', "
+                "do NOT include a workstream subheading in the newsletter — only use the "
+                "programme heading. For sections marked 'NO', include both programme and "
+                "workstream headings."
+            )),
         ]
         response = await self._llm.ainvoke(messages)
         content = response.content
@@ -391,6 +403,58 @@ class LLMService:
 
         logger.info("newsletter_consolidated", section_count=len(sections))
         return content
+
+    async def consolidate_programme_section(
+        self,
+        sections: list[dict],
+    ) -> str:
+        """Consolidate all workstream sections within a single programme.
+
+        Used when sending the intermediate programme-level summary to the
+        programme lead for approval, before the full newsletter goes to Ashwin.
+
+        Args:
+            sections: List of dicts with keys: programme, workstream, lead_name, content
+        """
+        sections_text = "\n\n---\n\n".join(
+            f"Workstream: {s['workstream']}\n"
+            f"Lead: {s['lead_name']}\n\n"
+            f"{s['content']}"
+            for s in sections
+        )
+
+        programme_name = sections[0]["programme"] if sections else "Programme"
+
+        messages = [
+            SystemMessage(content=(
+                "You are a professional newsletter editor. "
+                "Your task is to consolidate multiple workstream updates from the same programme "
+                "into a single, clean, well-structured HTML section. "
+                "Use clear workstream subheadings (h3 or h4). "
+                "Keep it professional, concise, and engaging. "
+                "Do NOT include the programme name heading — it will be added externally. "
+                "Output only HTML (no markdown code fences)."
+            )),
+            HumanMessage(content=(
+                f"Programme: {programme_name}\n\n"
+                f"Workstream sections to consolidate:\n\n{sections_text}"
+            )),
+        ]
+        response = await self._llm.ainvoke(messages)
+        content = response.content
+
+        # Strip code fences if present
+        if content.startswith("```"):
+            lines = content.split("\n")
+            if lines[-1].strip() == "```":
+                lines = lines[1:-1]
+            else:
+                lines = lines[1:]
+            content = "\n".join(lines)
+
+        logger.info("programme_section_consolidated", programme=programme_name, workstream_count=len(sections))
+        return content
+
 
     async def incorporate_feedback(
         self,

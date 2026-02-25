@@ -38,7 +38,10 @@ class EditionStatus(str, enum.Enum):
     COLLECTING = "collecting"
     REWORDING = "rewording"
     AWAITING_LEAD_APPROVAL = "awaiting_lead_approval"
+    AWAITING_PROGRAMME_LEAD_APPROVAL = "awaiting_programme_lead_approval"  # new
     CONSOLIDATING = "consolidating"
+    AWAITING_ASHWIN_APPROVAL = "awaiting_ashwin_approval"  # new
+    INCORPORATING_ASHWIN_FEEDBACK = "incorporating_ashwin_feedback"  # new
     AWAITING_ANUJ_APPROVAL = "awaiting_anuj_approval"
     INCORPORATING_FEEDBACK = "incorporating_feedback"
     SENT_TO_CLIENT = "sent_to_client"
@@ -69,6 +72,12 @@ class AuditAction(str, enum.Enum):
     LEAD_APPROVED = "lead_approved"
     LEAD_CHANGES_REQUESTED = "lead_changes_requested"
     NEWSLETTER_CONSOLIDATED = "newsletter_consolidated"
+    SENT_TO_PROGRAMME_LEAD = "sent_to_programme_lead"  # new
+    PROGRAMME_LEAD_APPROVED = "programme_lead_approved"  # new
+    PROGRAMME_LEAD_FEEDBACK = "programme_lead_feedback"  # new
+    SENT_TO_ASHWIN = "sent_to_ashwin"  # new
+    ASHWIN_APPROVED = "ashwin_approved"  # new
+    ASHWIN_FEEDBACK = "ashwin_feedback"  # new
     SENT_TO_ANUJ = "sent_to_anuj"
     ANUJ_APPROVED = "anuj_approved"
     ANUJ_FEEDBACK = "anuj_feedback"
@@ -97,6 +106,8 @@ class NewsletterEdition(Base):
     )
     html_content: Mapped[str | None] = mapped_column(Text, nullable=True)
     anuj_feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
+    programme_lead_feedback: Mapped[str | None] = mapped_column(Text, nullable=True)  # new
+    ashwin_feedback: Mapped[str | None] = mapped_column(Text, nullable=True)  # new
     attempt_count: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
