@@ -39,7 +39,8 @@ An autonomous AI agent that manages the entire lifecycle of monthly client newsl
 | **Autonomous Email Agent** | Polls inbox, classifies replies, sends requests & reminders — zero manual intervention |
 | **LLM Content Engine** | OpenAI / Azure OpenAI rewording, consolidation, and feedback incorporation |
 | **Dedicated Quality Dashboard Pipeline** | Automatically emails numerical metrics requests to the Quality lead and algorithmically maps their response directly into a bespoke HTML dashboard circle grid |
-| **Multi-Level Approvals** | Team leads approve their sections → Delivery leader approves the full newsletter |
+| **Multi-Level Approvals** | 4-stage chain: Workstream Lead → Programme Lead (multi-workstream programmes only) → Ashwin → Anuj → Distribution List |
+| **Smart Single-Workstream Handling** | Programmes with a single workstream skip the programme lead stage; their workstream heading is suppressed in the newsletter |
 | **Agentic AI Chatbot** | LangGraph Tool-calling Agent that dynamically queries *both* historical RAG data (pgvector) and live SQL Work-In-Progress drafts to answer complex comparative questions. Responses are streamed and structured with beautiful ReactMarkdown typography, tailored spacing, and emojis. |
 | **Premium SaaS Template** | Outlook-optimized HTML template rebuilt with a sleek, 10/10 magazine aesthetic (glassmorphism/box shadows, Segoe UI typography, Boehringer Ingelheim color palettes) |
 | **Admin Control Panel** | Real-time dashboard, newsletter management, lead tracking, activity feed |
@@ -70,12 +71,30 @@ An autonomous AI agent that manages the entire lifecycle of monthly client newsl
 ### Newsletter Workflow (LangGraph State Machine)
 
 ```
-INITIATE → COLLECT → REWORD → LEAD APPROVAL → CONSOLIDATE → ANUJ REVIEW
-                                                                │
-                                          ┌─────────────────────┤
-                                          ▼                     ▼
-                                  INCORPORATE FEEDBACK    SEND TO CLIENT → COMPLETE
+INITIATE → COLLECT → REWORD → LEAD APPROVAL
+                                    │
+           ┌────────────────────────┤
+           ▼                        ▼
+  [Multi-workstream]        [Single-workstream]
+  → PROGRAMME LEAD               │
+    APPROVAL                     │
+           │                     │
+           └──────────┬──────────┘
+                      ▼
+              CONSOLIDATE (full newsletter)
+                      │
+                      ▼
+               ASHWIN REVIEW
+          ┌────────┘  └──────────────┐
+          ▼                          ▼
+      ANUJ REVIEW         INCORPORATE ASHWIN FEEDBACK
+     (final sign-off)              │
+          │                        └──────► ASHWIN REVIEW
+          ▼
+  SEND TO CLIENT → COMPLETE
 ```
+
+> **Single-workstream programmes** (e.g. a standalone "Quality" programme) have no intermediate programme lead. Their content flows directly from team lead approval to Ashwin. In the newsletter, the workstream subheading is suppressed — only the programme heading appears.
 
 ---
 
@@ -160,7 +179,8 @@ Edit `backend/.env` with your credentials:
 | `EMAIL_ADDRESS` | The digital employee's email address |
 | `EMAIL_PASSWORD` | App password for the email account |
 | `IMAP_HOST` / `SMTP_HOST` | Mail server settings |
-| `ANUJ_EMAIL` | Delivery leader's email for approvals |
+| `ANUJ_EMAIL` | Delivery leader's email for final approval |
+| `ASHWIN_EMAIL` | Penultimate reviewer's email (approves before Anuj) |
 | `DISTRIBUTION_LIST` | Comma-separated recipient list (e.g. `"client1@ext.com, stakeholder@int.com"`) |
 
 ### 2. Quick Start (Docker Compose)
@@ -201,15 +221,30 @@ npm run dev
 
 ### 4. Configure Teams
 
-Edit [`backend/config/teams.yaml`](backend/config/teams.yaml) with your actual programmes, workstreams, and lead contacts:
+Edit [`backend/config/teams.yaml`](backend/config/teams.yaml) with your actual programmes, workstreams, and lead contacts.
+
+For **multi-workstream programmes**, add a `programme_lead_name` and `programme_lead_email` — this person receives the consolidated programme section for approval before Ashwin sees the full newsletter.
+
+For **single-workstream programmes**, omit the programme lead fields. The workstream lead's approval goes directly to Ashwin, and the workstream heading is suppressed in the newsletter.
 
 ```yaml
 programmes:
   - name: "Data & Analytics"
+    programme_lead_name: "Programme Lead Name"  # required for multi-workstream
+    programme_lead_email: "lead@yourorg.com"
     workstreams:
       - name: "Data Platform"
         lead_name: "Priya Sharma"
         lead_email: "priya.sharma@yourorg.com"
+      - name: "BI & Reporting"
+        lead_name: "Rohit Kumar"
+        lead_email: "rohit.kumar@yourorg.com"
+
+  - name: "Quality"  # single-workstream — no programme lead needed
+    workstreams:
+      - name: "Quality Metrics"
+        lead_name: "Abhijith"
+        lead_email: "abhijith@yourorg.com"
 ```
 
 ---
@@ -275,15 +310,18 @@ The chart includes:
 ## 🔄 How the Workflow Works
 
 1. **Admin triggers** a new newsletter cycle via the dashboard or API
-2. **Digital Employee emails** all sub-workstream leads requesting updates
+2. **Digital Employee emails** all workstream leads requesting updates
 3. **Celery Beat** polls the inbox every 60 seconds for replies
 4. When a lead replies, the **Email Parser** classifies it and the **LLM rewrites** it professionally
 5. The reworded content is **sent back to the lead for approval**
-6. Once **all leads approve**, the LLM **consolidates** everything into one newsletter
-7. The consolidated newsletter is **sent to Anuj** for final review
-8. If Anuj gives feedback → LLM incorporates it and re-submits
-9. If Anuj approves → **newsletter is broadcasted to the entire Distribution List**
-10. The completed newsletter is **indexed into pgvector** for RAG / Agent queries
+6. For **multi-workstream programmes**: once all their workstream leads approve, the programme content is consolidated and sent to the **Programme Lead** for an intermediate review
+7. For **single-workstream programmes**: content goes directly to Ashwin after the team lead approves
+8. Once all programme leads (and single-workstream leads) clear, the full newsletter is sent to **Ashwin** for pre-Anuj review
+9. If Ashwin gives feedback → LLM incorporates it and re-submits to Ashwin
+10. If Ashwin approves → newsletter forwarded to **Anuj** for final review
+11. If Anuj gives feedback → LLM incorporates it and re-submits
+12. If Anuj approves → **newsletter is broadcast to the entire Distribution List**
+13. The completed newsletter is **indexed into pgvector** for RAG / Agent queries
 
 Reminders are sent automatically if leads don't respond within the configured window (default: 3 days, max 2 reminders).
 
