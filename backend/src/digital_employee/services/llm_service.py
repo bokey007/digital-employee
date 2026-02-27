@@ -249,10 +249,10 @@ You MUST respond with a valid JSON object with these exact keys:
 
 Intent definitions:
 - "newsletter_content": The sender is providing their updates/content for the newsletter
-- "newsletter_approval": The sender is approving reworded content (e.g. "looks good", "approved", "yes", "ok", any positive affirmation)
-- "newsletter_changes": The sender is requesting changes to reworded content
-- "anuj_approval": The delivery leader is approving the consolidated newsletter
-- "anuj_feedback": The delivery leader is providing feedback/changes on the newsletter
+- "newsletter_approval": The sender is approving reworded content OR approving a consolidated programme section OR Ashwin is approving the full newsletter (e.g. "looks good", "approved", "yes", "ok", any positive affirmation)
+- "newsletter_changes": The sender is requesting changes to reworded content OR requesting changes to a programme section OR Ashwin requesting changes
+- "anuj_approval": The delivery leader (Anuj) is approving the consolidated newsletter
+- "anuj_feedback": The delivery leader (Anuj) is providing feedback/changes on the newsletter
 - "newsletter_question": The sender is asking a question about the newsletter process, status, timeline, or past editions
 - "out_of_scope": ANYTHING not related to the newsletter — casual chat, general questions, requests for help with other tasks, greetings without newsletter context, etc.
 - "spam_ignore": Automated notifications, marketing, system alerts, or clearly irrelevant bulk emails

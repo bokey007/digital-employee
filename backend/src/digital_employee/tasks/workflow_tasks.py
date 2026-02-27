@@ -228,7 +228,7 @@ def handle_programme_lead_reply(
         if intent == "newsletter_approval":
             # Programme lead approved — mark programme approved in metadata
             existing_meta = json.loads(edition.programme_lead_feedback or "{}")
-            existing_meta[sender_email] = {"status": "approved"}
+            existing_meta[sender_email.lower()] = {"status": "approved"}
             edition.programme_lead_feedback = json.dumps(existing_meta)
 
             session.add(AuditLog(
@@ -252,7 +252,7 @@ def handle_programme_lead_reply(
         else:
             # Programme lead gave feedback
             existing_meta = json.loads(edition.programme_lead_feedback or "{}")
-            existing_meta[sender_email] = {"status": "feedback", "content": body_text}
+            existing_meta[sender_email.lower()] = {"status": "feedback", "content": body_text}
             edition.programme_lead_feedback = json.dumps(existing_meta)
 
             session.add(AuditLog(
@@ -674,7 +674,7 @@ def _check_and_route_after_lead_approvals(session, edition: NewsletterEdition, s
 
                 section_html = _run_async(llm_svc.consolidate_programme_section(sections))
 
-                existing_meta[prog_lead_email] = {"status": "pending", "section_html": section_html}
+                existing_meta[prog_lead_email.lower()] = {"status": "pending", "section_html": section_html}
                 edition.programme_lead_feedback = json.dumps(existing_meta)
                 edition.status = EditionStatus.AWAITING_PROGRAMME_LEAD_APPROVAL
 
@@ -725,7 +725,7 @@ def _check_and_send_to_ashwin(session, edition: NewsletterEdition, settings: Set
         prog_lead_email = prog_config.get("programme_lead_email") if prog_config else None
         if not prog_lead_email:
             continue  # single-workstream, already counted as ready
-        if meta.get(prog_lead_email, {}).get("status") != "approved":
+        if meta.get(prog_lead_email.lower(), {}).get("status") != "approved":
             return  # Still waiting for this programme lead
 
     # All programme leads approved — consolidate full newsletter and send to Ashwin
@@ -857,7 +857,7 @@ def _incorporate_programme_lead_feedback_and_resend(
     email_svc = EmailService(settings)
 
     meta = json.loads(edition.programme_lead_feedback or "{}")
-    old_section_html = meta.get(lead_email, {}).get("section_html", "")
+    old_section_html = meta.get(lead_email.lower(), {}).get("section_html", "")
 
     # LLM revises the programme section
     revised_section = _run_async(llm_svc.incorporate_feedback(
@@ -865,7 +865,7 @@ def _incorporate_programme_lead_feedback_and_resend(
         feedback=feedback,
     ))
 
-    meta[lead_email] = {"status": "pending", "section_html": revised_section}
+    meta[lead_email.lower()] = {"status": "pending", "section_html": revised_section}
     edition.programme_lead_feedback = json.dumps(meta)
 
     # Find the programme name for this lead

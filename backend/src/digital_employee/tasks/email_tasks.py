@@ -99,7 +99,9 @@ def _build_workflow_context(session) -> str:
 def _get_programme_lead_emails() -> set[str]:
     """Return a set of all programme lead emails from teams.yaml."""
     import yaml, os
-    teams_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "..", "config", "teams.yaml")
+    # __file__ is backend/src/digital_employee/tasks/email_tasks.py
+    # teams.yaml is in backend/config/teams.yaml
+    teams_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "config", "teams.yaml"))
     prog_leads = set()
     if os.path.exists(teams_path):
         with open(teams_path) as f:

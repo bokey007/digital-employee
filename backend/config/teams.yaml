@@ -13,8 +13,8 @@
 
 programmes:
   - name: "Data & Analytics"
-    programme_lead_name: "Programme Lead Name"       # ← REPLACE with actual name
-    programme_lead_email: "programme.lead@org.com"   # ← REPLACE with actual email
+    programme_lead_name: "vimal"       # ← REPLACE with actual name
+    programme_lead_email: "bokey.transport.team@gmail.com"   # ← REPLACE with actual email
     workstreams:
       - name: "Data Platform"
         lead_name: "Sarala Deshmukh"
