@@ -7,6 +7,11 @@ export interface DashboardMetrics {
     pending_responses: number
     total_leads: number
     avg_turnaround_days: number | null
+    emails_sent: number
+    emails_received: number
+    questions_answered: number
+    hours_saved: number
+    dollar_value_saved: number
 }
 
 export interface ActivityItem {

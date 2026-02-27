@@ -10,6 +10,9 @@ import {
     Mail,
     RefreshCw,
     Send,
+    MessageSquare,
+    DollarSign,
+    Zap
 } from 'lucide-react'
 import { dashboardApi } from '../api/client'
 import type { ActivityItem, DashboardMetrics } from '../types'
@@ -65,7 +68,7 @@ export default function DashboardPage() {
         )
     }
 
-    const cards = metrics
+    const mainCards = metrics
         ? [
             { label: 'Total Editions', value: metrics.total_editions, icon: Newspaper, color: 'brand' },
             { label: 'Active Cycles', value: metrics.active_cycles, icon: Activity, color: 'amber' },
@@ -81,11 +84,20 @@ export default function DashboardPage() {
         ]
         : []
 
+    const impactCards = metrics
+        ? [
+            { label: 'Hours Saved', value: `${metrics.hours_saved} hrs`, icon: Clock, color: 'brand' },
+            { label: 'Cost Savings', value: `$${metrics.dollar_value_saved.toLocaleString()}`, icon: DollarSign, color: 'emerald' },
+            { label: 'Emails Handled', value: metrics.emails_sent + metrics.emails_received, icon: Send, color: 'blue' },
+            { label: 'Questions Answered', value: metrics.questions_answered, icon: MessageSquare, color: 'purple' },
+        ]
+        : []
+
     return (
         <div className="space-y-6">
             {/* Metrics Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {cards.map((card) => (
+                {mainCards.map((card) => (
                     <div key={card.label} className="card p-5">
                         <div className="flex items-center justify-between">
                             <div>
@@ -98,6 +110,29 @@ export default function DashboardPage() {
                         </div>
                     </div>
                 ))}
+            </div>
+
+            {/* Impact & Savings Grid */}
+            <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-amber-500" />
+                    Impact & Automation Savings
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {impactCards.map((card) => (
+                        <div key={card.label} className="card p-5">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-500 font-medium">{card.label}</p>
+                                    <p className="mt-1 text-2xl font-bold text-gray-900">{card.value}</p>
+                                </div>
+                                <div className={`p-3 rounded-xl bg-${card.color}-50`}>
+                                    <card.icon className={`h-5 w-5 text-${card.color}-500`} />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
 
             {/* Activity Feed */}
