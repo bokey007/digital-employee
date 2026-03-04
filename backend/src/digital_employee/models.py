@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
     Enum,
@@ -269,3 +270,36 @@ class EmailConversation(Base):
 
     def __repr__(self) -> str:
         return f"<EmailConversation {self.sender_email} [{self.subject[:40]}]>"
+
+
+class PortalToken(Base):
+    """Secure, single-use magic-link tokens for the web portal."""
+
+    __tablename__ = "portal_tokens"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    token: Mapped[str] = mapped_column(String(128), unique=True, nullable=False, index=True)
+    submission_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("lead_submissions.id"), nullable=True
+    )
+    edition_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("newsletter_editions.id"), nullable=True
+    )
+    # Role of the actor: "lead", "programme_lead", "ashwin", "anuj"
+    role: Mapped[str] = mapped_column(String(50), nullable=False)
+    # Type of action: "submit" (workstream content) or "review" (newsletter/section approval)
+    action_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    actor_email: Mapped[str] = mapped_column(String(320), nullable=False)
+    actor_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    # JSON blob: { programme, workstream, edition_title, section_html? }
+    context_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    is_used: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    def __repr__(self) -> str:
+        return f"<PortalToken {self.actor_email} [{self.role}/{self.action_type}] used={self.is_used}>"

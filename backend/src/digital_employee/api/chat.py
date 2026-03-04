@@ -52,29 +52,7 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
 
-AGENT_SYSTEM_PROMPT = """You are the AI Digital Employee for the Data & Analytics Programme.
-You help project leads and the delivery leader understand newsletter progress.
-You have access to two tools:
-1. search_past_newsletters: Semantic search over approved, historical newsletters. Use this for queries about past achievements, historical progress, or specific months.
-2. get_current_inprogress_updates: Fetches real-time, unapproved draft updates for the active cycle. Use this for queries about "current status", "what is pending", or "ongoing work".
-
-== COMMUNICATION STYLE & FORMATTING ==
-- Always respond in clear, well-structured, and beautiful Markdown.
-- Use emojis and icons (🚀, 📊, 💡, ✅, etc.) to make your responses engaging, fun to read, and professional.
-- Use bold text (`**`) for emphasis, especially for names, workstreams, and key metrics.
-- Use headings (`###`) to separate different workstreams or time periods cleanly.
-- Use bullet points (`-`) for lists of updates or highlights.
-
-== CRITICAL INSTRUCTIONS FOR MULTI-MONTH COMPARISONS ==
-- If a user asks for progress across multiple completed months AND current ongoing work (e.g. "for each month this year" or "compare Jan to now"):
-    - You MUST call `search_past_newsletters` MULTIPLE TIMES, once for each specific completed month.
-    - If the user asks about "current", "pending", "this month", or "ongoing" work alongside past months, you MUST ALSO explicitly call `get_current_inprogress_updates()` in the same session.
-    - DO NOT try to search all months in one call. By calling it once per month, you ensure you get the specific updates for every single period.
-    - After gathering all information from all tool calls (both past and WIP), synthesize a comprehensive comparative answer for the user.
-
-Use tools ONLY when necessary. If the user asks a general question or just says "hi", just reply naturally without tools.
-"""
-
+from digital_employee.services.agent_factory import create_admin_rag_agent
 @router.post("", response_model=ChatResponse)
 async def chat(
     body: ChatRequest,
@@ -107,21 +85,25 @@ async def chat(
         """Fetch real-time, unapproved Work-In-Progress updates from the CURRENT active cycle."""
         return await _get_active_progress(db) or "No active work-in-progress drafts."
 
-    agent = create_react_agent(
-        llm_svc._llm, 
-        tools=[search_past_newsletters, get_current_inprogress_updates],
-        prompt=AGENT_SYSTEM_PROMPT
+
+    # Build tools for this request
+    tools_for_agent = [search_past_newsletters, get_current_inprogress_updates]
+
+    # Create agent with PostgreSQL checkpointer — thread_id isolates memory per session
+    agent = await create_admin_rag_agent(
+        llm_svc._llm,
+        tools_for_agent,
+        settings.database_url_sync,
     )
+    config = {"configurable": {"thread_id": session_id}}
 
-    msg_history = []
-    for m in history:
-        msg_history.append(HumanMessage(content=m["content"]) if m["role"] == "user" else AIMessage(content=m["content"]))
-    msg_history.append(HumanMessage(content=body.question))
-
-    response = await agent.ainvoke({"messages": msg_history})
+    response = await agent.ainvoke(
+        {"messages": [HumanMessage(content=body.question)]},
+        config,
+    )
     final_answer = response["messages"][-1].content
 
-    # Save messages to DB
+    # Save to DB for history display panel (audit trail, not used for agent memory)
     db.add(ChatMessage(session_id=session_id, role="user", content=body.question))
     db.add(ChatMessage(session_id=session_id, role="assistant", content=final_answer, sources=json.dumps(sources_list)))
     await db.flush()
@@ -161,51 +143,40 @@ async def chat_stream(
         """Fetch real-time, unapproved Work-In-Progress updates from the CURRENT active cycle."""
         return await _get_active_progress(db) or "No active work-in-progress drafts."
 
-    agent = create_react_agent(
-        llm_svc._llm, 
-        tools=[search_past_newsletters, get_current_inprogress_updates],
-        prompt=AGENT_SYSTEM_PROMPT
+    # Create streaming agent with checkpointer
+    tools_for_agent = [search_past_newsletters, get_current_inprogress_updates]
+    agent = await create_admin_rag_agent(
+        llm_svc._llm,
+        tools_for_agent,
+        settings.database_url_sync,
     )
-
-    msg_history = []
-    for m in history:
-        msg_history.append(HumanMessage(content=m["content"]) if m["role"] == "user" else AIMessage(content=m["content"]))
-    msg_history.append(HumanMessage(content=body.question))
+    config = {"configurable": {"thread_id": session_id}}
 
     db.add(ChatMessage(session_id=session_id, role="user", content=body.question))
     await db.flush()
 
     async def event_generator():
         full_response = []
-        
-        # Stream events from the agent
-        async for msg, meta in agent.astream({"messages": msg_history}, stream_mode="messages"):
-            # If the model emits AI Message chunks, we stream them to the UI
+        async for msg, meta in agent.astream(
+            {"messages": [HumanMessage(content=body.question)]},
+            config,
+            stream_mode="messages",
+        ):
             if msg.type == "AIMessageChunk" and msg.content:
-                # If we just got our first real content token, emit the sources we collected from any tool calls
                 if not full_response and sources_list:
-                    # Deduplicate sources based on edition title
-                    unique_sources = []
-                    seen = set()
-                    for s in sources_list:
-                        if s["edition"] not in seen:
-                            unique_sources.append(s)
-                            seen.add(s["edition"])
+                    unique_sources = list({s["edition"]: s for s in sources_list}.values())
                     yield {"event": "sources", "data": json.dumps({"sources": unique_sources, "session_id": session_id})}
-                
                 full_response.append(msg.content)
                 yield {"event": "token", "data": json.dumps({"token": msg.content})}
-            
-            # We can optionally emit tool call events if we want the UI to show "Searching past newsletters..."
             elif msg.type == "AIMessageChunk" and msg.tool_calls:
                 for tc in msg.tool_calls:
                     yield {"event": "tool_call", "data": json.dumps({"tool": tc["name"]})}
 
         answer = "".join(full_response)
-        
-        # Fallback if AI didn't stream any chunks but just returned an AIMessage (edge case)
         if not answer:
-            final_state = await agent.ainvoke({"messages": msg_history})
+            final_state = await agent.ainvoke(
+                {"messages": [HumanMessage(content=body.question)]}, config
+            )
             answer = final_state["messages"][-1].content
             yield {"event": "token", "data": json.dumps({"token": answer})}
 
@@ -247,12 +218,12 @@ async def get_chat_history_endpoint(
 
 
 async def _get_chat_history(db: AsyncSession, session_id: str) -> list[dict]:
-    """Retrieve recent chat history for context."""
+    """Retained for the history display panel — not used for agent memory (checkpointer handles that)."""
     result = await db.execute(
         select(ChatMessage)
         .where(ChatMessage.session_id == session_id)
         .order_by(ChatMessage.timestamp.desc())
-        .limit(10)
+        .limit(50)
     )
     messages = result.scalars().all()
     return [{"role": m.role, "content": m.content} for m in reversed(messages)]

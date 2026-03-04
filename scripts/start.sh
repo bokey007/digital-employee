@@ -4,7 +4,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.."
 cd "$ROOT_DIR"
 
 echo "╔══════════════════════════════════════════════════╗"
@@ -23,9 +23,29 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-# ── Build & Start ────────────────────────────────────────────────────────────
+# ── Start infrastructure first (needed for migration) ─────────────────────
+echo "🐳 Starting PostgreSQL + Redis..."
+docker compose up postgresql redis -d --wait 2>/dev/null || docker compose up postgresql redis -d
+sleep 4
+echo "   ✅ Infrastructure ready."
+echo ""
+
+# ── Run Alembic migrations ──────────────────────────────────────────────────
+echo "🗄️  Running database migrations..."
+cd "$ROOT_DIR/backend"
+if command -v uv &> /dev/null; then
+    uv run alembic upgrade head
+    echo "   ✅ Migrations applied (including portal_tokens table)."
+else
+    echo "   ⚠️  'uv' not found — skipping local migration."
+    echo "      Migrations will run inside the backend container on first start."
+fi
+cd "$ROOT_DIR"
+echo ""
+
+# ── Build & Start remaining services ─────────────────────────────────────────
 echo "🐳 Building and starting all services..."
-echo "   PostgreSQL + pgvector | Redis | Backend API | Celery Worker | Celery Beat | Frontend"
+echo "   PostgreSQL + Redis | Backend API | Celery Worker | Celery Beat | Frontend"
 echo ""
 
 docker compose up --build -d
@@ -41,15 +61,19 @@ for i in {1..30}; do
         echo "═══════════════════════════════════════════════════"
         echo "✅ All services running!"
         echo ""
-        echo "  🌐 Frontend:     http://localhost:3000"
-        echo "  📡 Backend API:  http://localhost:8000"
-        echo "  📖 API Docs:     http://localhost:8000/docs"
-        echo "  ❤️  Health:       http://localhost:8000/healthz"
+        echo "  🌐 Frontend:      http://localhost:3000"
+        echo "  📡 Backend API:   http://localhost:8000"
+        echo "  📖 API Docs:      http://localhost:8000/docs"
+        echo "  ❤️  Health:        http://localhost:8000/healthz"
         echo ""
-        echo "  📊 Dashboard:    http://localhost:3000/"
-        echo "  📰 Newsletters:  http://localhost:3000/newsletters"
-        echo "  💬 Chat:         http://localhost:3000/chat"
-        echo "  👥 Leads:        http://localhost:3000/leads"
+        echo "  📊 Dashboard:     http://localhost:3000/"
+        echo "  📰 Newsletters:   http://localhost:3000/newsletters"
+        echo "  💬 Chat:          http://localhost:3000/chat"
+        echo "  👥 Leads:         http://localhost:3000/leads"
+        echo ""
+        echo "  🔗 Portal Submit: http://localhost:3000/portal/submit?token=<token>"
+        echo "  🔗 Portal Review: http://localhost:3000/portal/review?token=<token>"
+        echo "     Tokens are emailed automatically when a cycle is triggered."
         echo ""
         echo "  To stop:  docker compose down"
         echo "  Logs:     docker compose logs -f [service]"

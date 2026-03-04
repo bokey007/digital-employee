@@ -21,10 +21,39 @@ from digital_employee.models import (
 )
 from digital_employee.services.llm_service import LLMService
 from digital_employee.services.rag_service import RAGService
+from digital_employee.services.token_service import create_token_sync, build_portal_url
 from digital_employee.settings import Settings
 from digital_employee.tasks.celery_app import celery_app
 
 logger = structlog.get_logger(__name__)
+
+
+def _make_portal_url(
+    session,
+    settings: Settings,
+    *,
+    role: str,
+    page: str,
+    actor_email: str,
+    actor_name: str,
+    edition_id,
+    context: dict,
+    submission_id=None,
+) -> str:
+    """Create a PortalToken, flush to DB, and return the full portal URL."""
+    token_str = create_token_sync(
+        session,
+        role=role,
+        action_type="submit" if page == "submit" else "review",
+        actor_email=actor_email,
+        actor_name=actor_name,
+        edition_id=edition_id,
+        submission_id=submission_id,
+        context=context,
+        settings=settings,
+    )
+    session.flush()
+    return build_portal_url(settings, token_str, page=page)
 
 
 def _get_sync_session():
@@ -226,9 +255,13 @@ def handle_programme_lead_reply(
             return {"status": "routed_to_general"}
 
         if intent == "newsletter_approval":
-            # Programme lead approved — mark programme approved in metadata
+            # Programme lead approved — mark programme approved in metadata.
+            # IMPORTANT: merge into the existing entry so we preserve section_html
+            # (saved by portal_approve) rather than overwriting it.
             existing_meta = json.loads(edition.programme_lead_feedback or "{}")
-            existing_meta[sender_email.lower()] = {"status": "approved"}
+            lead_entry = existing_meta.get(sender_email.lower(), {})
+            lead_entry["status"] = "approved"
+            existing_meta[sender_email.lower()] = lead_entry
             edition.programme_lead_feedback = json.dumps(existing_meta)
 
             session.add(AuditLog(
@@ -308,12 +341,12 @@ def handle_ashwin_reply(
                 edition_id=edition.id,
                 action=AuditAction.ASHWIN_APPROVED,
                 actor=settings.ashwin_email,
-                detail="Ashwin approved the newsletter — forwarding to Anuj",
+                detail=f"{settings.ashwin_name} approved the newsletter — forwarding to {settings.anuj_name}",
             ))
 
             _send_llm_reply(
                 settings, settings.ashwin_email, settings.ashwin_name, subject, body_text,
-                f"Ashwin just APPROVED the newsletter '{edition.title}'. "
+                f"{settings.ashwin_name} just APPROVED the newsletter '{edition.title}'. "
                 f"Acknowledge warmly and explain it's being forwarded to {settings.anuj_name} for final approval.",
                 session,
             )
@@ -332,7 +365,7 @@ def handle_ashwin_reply(
                 edition_id=edition.id,
                 action=AuditAction.ASHWIN_FEEDBACK,
                 actor=settings.ashwin_email,
-                detail=f"Ashwin provided feedback (attempt {edition.attempt_count})",
+                detail=f"{settings.ashwin_name} provided feedback (attempt {edition.attempt_count})",
             ))
 
             session.commit()
@@ -389,13 +422,22 @@ def handle_anuj_reply(
                 detail="Newsletter approved for client delivery",
             ))
 
+            # Render the full newsletter (BI header + nav + approved content + contacts + footer)
+            # edition.html_content holds the content body — render_newsletter wraps it
+            from digital_employee.services.template_service import TemplateService
+            template_svc = TemplateService()
+            final_newsletter_html = template_svc.render_newsletter(
+                title=edition.title,
+                date=edition.sent_at or datetime.now(timezone.utc),
+                content_html=edition.html_content or "",
+            )
+
             # Send to client
             from digital_employee.services.email_service import EmailService
-
             email_svc = EmailService(settings)
             email_svc.send_newsletter_to_client(
                 distribution_list=settings.distribution_list,
-                newsletter_html=edition.html_content or "",
+                newsletter_html=final_newsletter_html,
                 edition_title=edition.title,
             )
 
@@ -413,7 +455,7 @@ def handle_anuj_reply(
             # Acknowledge Anuj
             _send_llm_reply(
                 settings, settings.anuj_email, settings.anuj_name, subject, body_text,
-                f"Anuj just APPROVED the newsletter '{edition.title}'. "
+                f"{settings.anuj_name} just APPROVED the newsletter '{edition.title}'. "
                 f"Confirm that the newsletter has been sent to {len(settings.distribution_list)} people on the distribution list.",
                 session,
             )
@@ -576,7 +618,10 @@ def _send_llm_reply(
 
 
 def _reword_and_send_approval(session, sub: LeadSubmission, settings: Settings):
-    """Reword content via LLM and send for lead approval."""
+    """Reword content via LLM and save it. The lead sees it instantly via the portal
+    after re-using their submission link — NO approval email is sent from here.
+    If the lead requested changes, a new portal token is created and emailed.
+    """
     from digital_employee.services.email_service import EmailService
 
     llm_svc = LLMService(settings)
@@ -595,22 +640,39 @@ def _reword_and_send_approval(session, sub: LeadSubmission, settings: Settings):
         edition_id=sub.edition_id,
         action=AuditAction.CONTENT_REWORDED,
         actor="system",
-        detail=f"Content reworded for {sub.lead_name}",
+        detail=f"Content reworded for {sub.lead_name} (changes request cycle)",
     ))
 
-    email_svc.send_approval_request(
+    # Generate a fresh portal link so the lead can review the revised version
+    portal_url = _make_portal_url(
+        session, settings,
+        role="lead",
+        page="submit",
+        actor_email=sub.lead_email,
+        actor_name=sub.lead_name,
+        edition_id=sub.edition_id,
+        submission_id=sub.id,
+        context={
+            "programme": sub.programme,
+            "workstream": sub.workstream,
+            "edition_title": session.get(NewsletterEdition, sub.edition_id).title if sub.edition_id else "",
+        },
+    )
+
+    email_svc.send_update_request(
         lead_email=sub.lead_email,
         lead_name=sub.lead_name,
         programme=sub.programme,
         workstream=sub.workstream,
-        reworded_content=reworded,
+        edition_title=session.get(NewsletterEdition, sub.edition_id).title if sub.edition_id else "Newsletter",
+        portal_url=portal_url,
     )
 
     session.add(AuditLog(
         edition_id=sub.edition_id,
         action=AuditAction.APPROVAL_REQUESTED,
         actor="system",
-        detail=f"Reworded content sent to {sub.lead_name} for approval",
+        detail=f"Revised portal link sent to {sub.lead_name} after changes request",
     ))
 
 
@@ -685,12 +747,27 @@ def _check_and_route_after_lead_approvals(session, edition: NewsletterEdition, s
                     detail=f"Consolidated {prog_name} section sent to programme lead {prog_lead_name}",
                 ))
 
+                portal_url = _make_portal_url(
+                    session, settings,
+                    role="programme_lead",
+                    page="review",
+                    actor_email=prog_lead_email,
+                    actor_name=prog_lead_name,
+                    edition_id=edition.id,
+                    context={
+                        "programme": prog_name,
+                        "edition_title": edition.title,
+                        "section_html": section_html,
+                    },
+                )
+
                 email_svc.send_programme_section_for_review(
                     programme_lead_email=prog_lead_email,
                     programme_lead_name=prog_lead_name,
                     programme=prog_name,
                     section_html=section_html,
                     edition_title=edition.title,
+                    portal_url=portal_url,
                 )
 
             # Check if this programme lead has approved
@@ -750,17 +827,49 @@ def _consolidate_and_send_to_ashwin(session, edition: NewsletterEdition, setting
         by_programme.setdefault(s.programme, []).append(s)
 
     sections = []
+    # Read programme lead feedback to check for approved (possibly chat-edited) sections.
+    prog_lead_meta = json.loads(edition.programme_lead_feedback or "{}")
+
+    # Build a map of programme_name → approved_section_html for quick lookup.
+    # We can't key by programme directly (meta is keyed by email), so we extract
+    # any approved+section_html entry and match it when iterating below.
+    approved_by_email: dict[str, str] = {
+        email: entry["section_html"]
+        for email, entry in prog_lead_meta.items()
+        if entry.get("status") == "approved" and entry.get("section_html")
+    }
+
     for prog_name, prog_subs in by_programme.items():
         is_single = len(prog_subs) == 1
-        for s in prog_subs:
-            if s.status == SubmissionStatus.APPROVED and s.reworded_content:
-                sections.append({
-                    "programme": s.programme,
-                    "workstream": s.workstream,
-                    "lead_name": s.lead_name,
-                    "content": s.reworded_content,
-                    "is_single_workstream": is_single,  # controls workstream heading visibility
-                })
+
+        # Find the programme lead config for this programme to get their email.
+        prog_config = _get_programme_config(prog_name)
+        prog_lead_email = (prog_config.get("programme_lead_email") or "").lower() if prog_config else ""
+        approved_section_html = approved_by_email.get(prog_lead_email)
+
+        if approved_section_html:
+            # Programme lead approved (possibly with chat edits) — use their version
+            # as a single section. IMPORTANT: still pass through consolidate_newsletter
+            # so CONSOLIDATE_SYSTEM_PROMPT can reorganise into the 4-section format
+            # (KEY HIGHLIGHTS / DELIVERY UPDATES / QUALITY / INNOVATION).
+            sections.append({
+                "programme": prog_name,
+                "workstream": "All workstreams (programme-lead reviewed)",
+                "lead_name": "Programme Lead",
+                "content": approved_section_html,
+                "is_single_workstream": True,  # suppress workstream sub-heading
+            })
+        else:
+            # No programme lead edit — build from individual workstream submissions
+            for s in prog_subs:
+                if s.status == SubmissionStatus.APPROVED and s.reworded_content:
+                    sections.append({
+                        "programme": s.programme,
+                        "workstream": s.workstream,
+                        "lead_name": s.lead_name,
+                        "content": s.reworded_content,
+                        "is_single_workstream": is_single,
+                    })
 
     if not sections:
         logger.error("consolidate_failed_no_sections", edition_id=str(edition.id))
@@ -783,7 +892,7 @@ def _consolidate_and_send_to_ashwin(session, edition: NewsletterEdition, setting
         reviewer_name=settings.ashwin_name,
     )
 
-    edition.html_content = newsletter_html
+    edition.html_content = content_html   # store content body only — render_newsletter wraps on demand
     edition.status = EditionStatus.AWAITING_ASHWIN_APPROVAL
 
     session.add(AuditLog(
@@ -793,11 +902,22 @@ def _consolidate_and_send_to_ashwin(session, edition: NewsletterEdition, setting
         detail=f"Newsletter consolidated from {len(sections)} sections",
     ))
 
+    ashwin_portal_url = _make_portal_url(
+        session, settings,
+        role="ashwin",
+        page="review",
+        actor_email=settings.ashwin_email,
+        actor_name=settings.ashwin_name,
+        edition_id=edition.id,
+        context={"edition_title": edition.title},
+    )
+
     email_svc.send_newsletter_for_review(
         reviewer_email=settings.ashwin_email,
         reviewer_name=settings.ashwin_name,
         newsletter_html=ashwin_review_html,
         edition_title=edition.title,
+        portal_url=ashwin_portal_url,
     )
 
     session.add(AuditLog(
@@ -836,11 +956,22 @@ def _send_to_anuj(session, edition: NewsletterEdition, settings: Settings):
         detail="Newsletter forwarded to Anuj after Ashwin's approval",
     ))
 
+    anuj_portal_url = _make_portal_url(
+        session, settings,
+        role="anuj",
+        page="review",
+        actor_email=settings.anuj_email,
+        actor_name=settings.anuj_name,
+        edition_id=edition.id,
+        context={"edition_title": edition.title},
+    )
+
     email_svc.send_newsletter_for_review(
         reviewer_email=settings.anuj_email,
         reviewer_name=settings.anuj_name,
         newsletter_html=anuj_review_html,
         edition_title=edition.title,
+        portal_url=anuj_portal_url,
     )
 
     session.commit()
@@ -875,12 +1006,27 @@ def _incorporate_programme_lead_feedback_and_resend(
             prog_name = prog["name"]
             break
 
+    portal_url = _make_portal_url(
+        session, settings,
+        role="programme_lead",
+        page="review",
+        actor_email=lead_email,
+        actor_name=lead_name,
+        edition_id=edition.id,
+        context={
+            "programme": prog_name,
+            "edition_title": edition.title,
+            "section_html": revised_section,
+        },
+    )
+
     email_svc.send_programme_section_for_review(
         programme_lead_email=lead_email,
         programme_lead_name=lead_name,
         programme=prog_name,
         section_html=revised_section,
         edition_title=edition.title,
+        portal_url=portal_url,
     )
 
     session.commit()
@@ -914,7 +1060,7 @@ def _incorporate_ashwin_feedback_and_resubmit(session, edition: NewsletterEditio
         reviewer_name=settings.ashwin_name,
     )
 
-    edition.html_content = newsletter_html
+    edition.html_content = revised_content  # store content body only — template wraps on demand
     edition.ashwin_feedback = None
     edition.status = EditionStatus.AWAITING_ASHWIN_APPROVAL
 
@@ -922,14 +1068,25 @@ def _incorporate_ashwin_feedback_and_resubmit(session, edition: NewsletterEditio
         edition_id=edition.id,
         action=AuditAction.FEEDBACK_INCORPORATED,
         actor="system",
-        detail=f"Ashwin feedback incorporated (attempt {edition.attempt_count})",
+        detail=f"{settings.ashwin_name} feedback incorporated (attempt {edition.attempt_count})",
     ))
+
+    ashwin_portal_url = _make_portal_url(
+        session, settings,
+        role="ashwin",
+        page="review",
+        actor_email=settings.ashwin_email,
+        actor_name=settings.ashwin_name,
+        edition_id=edition.id,
+        context={"edition_title": edition.title},
+    )
 
     email_svc.send_newsletter_for_review(
         reviewer_email=settings.ashwin_email,
         reviewer_name=settings.ashwin_name,
         newsletter_html=ashwin_review_html,
         edition_title=edition.title,
+        portal_url=ashwin_portal_url,
     )
 
     session.commit()
@@ -963,7 +1120,7 @@ def _incorporate_and_resubmit(session, edition: NewsletterEdition, settings: Set
         reviewer_name=settings.anuj_name,
     )
 
-    edition.html_content = newsletter_html
+    edition.html_content = revised_content  # store content body only — template wraps on demand
     edition.status = EditionStatus.AWAITING_ANUJ_APPROVAL
     edition.anuj_feedback = None
 
@@ -971,14 +1128,25 @@ def _incorporate_and_resubmit(session, edition: NewsletterEdition, settings: Set
         edition_id=edition.id,
         action=AuditAction.FEEDBACK_INCORPORATED,
         actor="system",
-        detail=f"Anuj feedback incorporated (attempt {edition.attempt_count})",
+        detail=f"{settings.anuj_name} feedback incorporated (attempt {edition.attempt_count})",
     ))
+
+    anuj_portal_url = _make_portal_url(
+        session, settings,
+        role="anuj",
+        page="review",
+        actor_email=settings.anuj_email,
+        actor_name=settings.anuj_name,
+        edition_id=edition.id,
+        context={"edition_title": edition.title},
+    )
 
     email_svc.send_newsletter_for_review(
         reviewer_email=settings.anuj_email,
         reviewer_name=settings.anuj_name,
         newsletter_html=review_html,
         edition_title=edition.title,
+        portal_url=anuj_portal_url,
     )
 
     session.add(AuditLog(

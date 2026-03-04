@@ -24,18 +24,19 @@ celery_app.conf.update(
     task_track_started=True,
     task_acks_late=True,
     worker_prefetch_multiplier=1,
-    # Auto-discover tasks in the tasks module
-    imports=["digital_employee.tasks.email_tasks", "digital_employee.tasks.workflow_tasks"],
+    # Auto-discover tasks
+    imports=["digital_employee.tasks.workflow_tasks", "digital_employee.tasks.email_tasks"],
 )
 
 # Periodic beat schedule
 celery_app.conf.beat_schedule = {
-    "poll-inbox-every-60s": {
-        "task": "digital_employee.tasks.email_tasks.poll_inbox",
-        "schedule": 60.0,  # Every minute
-    },
+    # poll_inbox removed — inbound email parsing replaced by web portal
     "check-reminders-daily": {
         "task": "digital_employee.tasks.email_tasks.check_and_send_reminders",
-        "schedule": crontab(hour=9, minute=0),  # Daily at 9 AM UTC
+        "schedule": crontab(hour=9, minute=0),   # 9:00 AM UTC — workstream lead reminders
+    },
+    "send-reviewer-reminders-daily": {
+        "task": "digital_employee.tasks.email_tasks.send_reviewer_reminders",
+        "schedule": crontab(hour=9, minute=5),   # 9:05 AM UTC — programme lead, Ashwin, Anuj reminders
     },
 }

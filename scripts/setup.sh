@@ -22,8 +22,17 @@ else
     echo "📋 backend/.env already exists — skipping."
 fi
 
-# ── Backend dependencies ─────────────────────────────────────────────────────
 echo ""
+echo "📝 Key settings to configure in backend/.env:"
+echo "   OPENAI_API_KEY        — your OpenAI key"
+echo "   SMTP_HOST/PORT        — outbound email for notifications"
+echo "   EMAIL_ADDRESS         — the Digital Employee's sender address"
+echo "   EMAIL_PASSWORD        — SMTP app password"
+echo "   PORTAL_BASE_URL       — frontend URL (default: http://localhost:3000)"
+echo "   ANUJ_EMAIL / ASHWIN_EMAIL — reviewer email addresses"
+echo ""
+
+# ── Backend dependencies ─────────────────────────────────────────────────────
 echo "📦 Installing backend dependencies (uv)..."
 cd "$ROOT_DIR/backend"
 if command -v uv &> /dev/null; then
@@ -53,6 +62,11 @@ echo "✅ Setup complete!"
 echo ""
 echo "Next steps:"
 echo "  1. Edit backend/.env with your API keys and email credentials"
-echo "  2. Run:  ./scripts/start.sh   (Docker full stack)"
-echo "     or:   ./scripts/dev.sh     (local dev with hot-reload)"
+echo "     (PORTAL_BASE_URL defaults to http://localhost:3000 — change for production)"
+echo "  2. Start the app:"
+echo "     ./scripts/start.sh      (Docker full stack — auto-runs DB migrations)"
+echo "     ./scripts/dev.sh        (local dev with hot-reload — also auto-runs migrations)"
+echo ""
+echo "  🔗 Once running, portal links are emailed automatically"
+echo "     when you trigger a newsletter cycle from the dashboard."
 echo "═══════════════════════════════════════════════════"

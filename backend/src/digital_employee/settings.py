@@ -49,13 +49,16 @@ class Settings(BaseSettings):
     azure_openai_deployment: str = "gpt-4o"
 
     # ── Email ────────────────────────────────────────────────────────────────
-    imap_host: str = "imap.gmail.com"
-    imap_port: int = 993
+    # IMAP removed — inbound email handled via web portal (magic link tokens)
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 587
     email_address: str = ""
     email_password: str = ""
     email_use_tls: bool = True
+
+    # ── Portal ───────────────────────────────────────────────────────────────
+    portal_base_url: str = "http://localhost:3000"
+    portal_token_ttl_days: int = 14
 
     # ── Database ─────────────────────────────────────────────────────────────
     database_url: str = "postgresql+asyncpg://digital_employee:secret@localhost:5432/digital_employee"

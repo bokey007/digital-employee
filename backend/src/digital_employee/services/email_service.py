@@ -1,176 +1,54 @@
-"""Email service — IMAP reading and SMTP sending."""
+"""Email service — SMTP sending only. Inbound email is replaced by the web portal."""
 
 from __future__ import annotations
 
-import email
 import email.utils
 import smtplib
 import ssl
-from dataclasses import dataclass, field
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Optional
 
-import imapclient
 import structlog
 
 from digital_employee.settings import Settings
 
 logger = structlog.get_logger(__name__)
 
+# ── CTA button template ──────────────────────────────────────────────────────
 
-@dataclass
-class IncomingEmail:
-    """Parsed representation of an incoming email."""
+_CTA_BUTTON_HTML = """
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;">
+  <tr>
+    <td align="center">
+      <a href="{url}"
+         style="display:inline-block; background-color:#08312A; color:#00E47C;
+                font-family:Calibri,sans-serif; font-size:15px; font-weight:bold;
+                text-decoration:none; padding:14px 32px; border-radius:6px;
+                letter-spacing:0.5px;">
+        {label}
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" style="padding-top:10px;">
+      <p style="font-family:Calibri,sans-serif; font-size:11px; color:#888; margin:0;">
+        Or copy this link: <a href="{url}" style="color:#08312A;">{url}</a>
+      </p>
+    </td>
+  </tr>
+</table>
+"""
 
-    uid: int
-    from_addr: str
-    from_name: str
-    to_addr: str
-    subject: str
-    body_text: str
-    body_html: str
-    date: str
-    message_id: str
-    in_reply_to: str | None = None
-    references: str | None = None
-    headers: dict = field(default_factory=dict)
+
+def _cta_button(url: str, label: str = "Open Portal →") -> str:
+    return _CTA_BUTTON_HTML.format(url=url, label=label)
 
 
 class EmailService:
-    """Handles all email operations: reading via IMAP and sending via SMTP."""
+    """Handles outbound email operations via SMTP."""
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
-        self._imap: Optional[imapclient.IMAPClient] = None
-
-    # ── IMAP ─────────────────────────────────────────────────────────────────
-
-    def connect_imap(self) -> imapclient.IMAPClient:
-        """Establish a connection to the IMAP server."""
-        ctx = ssl.create_default_context()
-        self._imap = imapclient.IMAPClient(
-            self._settings.imap_host,
-            port=self._settings.imap_port,
-            ssl=True,
-            ssl_context=ctx,
-        )
-        self._imap.login(self._settings.email_address, self._settings.email_password)
-        logger.info("imap_connected", host=self._settings.imap_host)
-        return self._imap
-
-    def disconnect_imap(self) -> None:
-        """Cleanly close the IMAP connection."""
-        if self._imap:
-            try:
-                self._imap.logout()
-            except Exception:
-                pass
-            self._imap = None
-
-    def fetch_unread_emails(self, folder: str = "INBOX", max_emails: int = 20) -> list[IncomingEmail]:
-        """Fetch recent unread emails from the inbox.
-
-        Filters by UNSEEN + last 7 days. Caps at max_emails to control costs.
-        No subject filtering — every email gets processed by the LLM brain.
-        """
-        from datetime import datetime, timedelta
-
-        if not self._imap:
-            self.connect_imap()
-
-        assert self._imap is not None
-        self._imap.select_folder(folder)
-
-        # Fetch unread emails from the last 7 days that match our prefix
-        since_date = (datetime.now() - timedelta(days=7)).strftime("%d-%b-%Y")
-        
-        # We start with the base criteria: unread and since last 7 days
-        criteria = ["UNSEEN", "SINCE", since_date]
-        
-        # Add subject prefix filter - this is crucial when there are 100k+ unread emails
-        if self._settings.newsletter_subject_prefix:
-            criteria.extend(["SUBJECT", self._settings.newsletter_subject_prefix])
-            
-        uids = self._imap.search(criteria)
-
-        if not uids:
-            # Fallback: if no recent unread matches prefix, look for any UNSEEN from last 7 days 
-            # to handle edge cases where prefix varies, but limit heavily.
-            criteria = ["UNSEEN", "SINCE", since_date]
-            uids = self._imap.search(criteria)
-            if not uids:
-                return []
-
-        # Cap to avoid processing too many at once
-        uids = uids[-max_emails:]
-
-        logger.info("fetching_unread", count=len(uids))
-        raw_messages = self._imap.fetch(uids, ["RFC822", "FLAGS"])
-
-        results: list[IncomingEmail] = []
-        for uid, data in raw_messages.items():
-            try:
-                parsed = self._parse_email(uid, data[b"RFC822"])
-                results.append(parsed)
-            except Exception as exc:
-                logger.error("email_parse_error", uid=uid, error=str(exc))
-
-        return results
-
-    def mark_as_read(self, uid: int) -> None:
-        """Mark a specific email as read."""
-        if self._imap:
-            self._imap.set_flags([uid], [imapclient.SEEN])
-
-    def _parse_email(self, uid: int, raw: bytes) -> IncomingEmail:
-        """Parse raw email bytes into an IncomingEmail object."""
-        msg = email.message_from_bytes(raw)
-
-        from_name, from_addr = email.utils.parseaddr(msg.get("From", ""))
-        to_name, to_addr = email.utils.parseaddr(msg.get("To", ""))
-
-        body_text = ""
-        body_html = ""
-
-        if msg.is_multipart():
-            for part in msg.walk():
-                content_type = part.get_content_type()
-                if part.get("Content-Disposition") == "attachment":
-                    continue
-                payload = part.get_payload(decode=True)
-                if payload is None:
-                    continue
-                charset = part.get_content_charset() or "utf-8"
-                decoded = payload.decode(charset, errors="replace")
-
-                if content_type == "text/plain":
-                    body_text = decoded
-                elif content_type == "text/html":
-                    body_html = decoded
-        else:
-            payload = msg.get_payload(decode=True)
-            if payload:
-                charset = msg.get_content_charset() or "utf-8"
-                decoded = payload.decode(charset, errors="replace")
-                if msg.get_content_type() == "text/html":
-                    body_html = decoded
-                else:
-                    body_text = decoded
-
-        return IncomingEmail(
-            uid=uid,
-            from_addr=from_addr,
-            from_name=from_name,
-            to_addr=to_addr,
-            subject=msg.get("Subject", ""),
-            body_text=body_text,
-            body_html=body_html,
-            date=msg.get("Date", ""),
-            message_id=msg.get("Message-ID", ""),
-            in_reply_to=msg.get("In-Reply-To"),
-            references=msg.get("References"),
-        )
 
     # ── SMTP ─────────────────────────────────────────────────────────────────
 
@@ -189,7 +67,9 @@ class EmailService:
         msg["From"] = self._settings.email_address
         msg["To"] = ", ".join(recipients)
         msg["Subject"] = subject
-        msg["Message-ID"] = email.utils.make_msgid(domain=self._settings.email_address.split("@")[-1])
+        msg["Message-ID"] = email.utils.make_msgid(
+            domain=self._settings.email_address.split("@")[-1]
+        )
 
         if reply_to_message_id:
             msg["In-Reply-To"] = reply_to_message_id
@@ -219,7 +99,7 @@ class EmailService:
             logger.error("email_send_failed", to=recipients, subject=subject, error=str(exc))
             raise
 
-    # ── Convenience methods ──────────────────────────────────────────────────
+    # ── Workflow notification emails ──────────────────────────────────────────
 
     def send_update_request(
         self,
@@ -228,86 +108,65 @@ class EmailService:
         programme: str,
         workstream: str,
         edition_title: str,
+        portal_url: str,
     ) -> None:
-        """Send a request for updates to a sub-workstream lead."""
-        subject = f"{self._settings.newsletter_subject_prefix} Request for Updates — {programme} / {workstream}"
-        
-        if programme.lower() == "quality" or workstream.lower() == "quality metrics":
-            body_html = f"""
-            <html><body>
-            <p>Hi {lead_name},</p>
-            <p>We are preparing the <strong>{edition_title}</strong>.</p>
-            <p>Could you please share the latest numbers for the <strong>Quality Dashboard</strong>
-            covering the following metrics:</p>
-            <ul>
-                <li><strong>Lean Projects Completed</strong></li>
-                <li><strong>GB Projects Completed</strong></li>
-                <li><strong>Lean Trained &amp; Tested</strong> (%)</li>
-                <li><strong>GB Trained &amp; Tested</strong> (%)</li>
-                <li><strong>Lean Certified</strong> (%)</li>
-                <li><strong>GB Certified</strong> (%)</li>
-            </ul>
-            <p>Please reply to this email with your updates at your earliest convenience.</p>
-            <p>Thank you,<br/>{self._settings.app_name}</p>
-            </body></html>
-            """
-        else:
-            body_html = f"""
-            <html><body>
-            <p>Hi {lead_name},</p>
-            <p>We are preparing the <strong>{edition_title}</strong>.</p>
-            <p>Could you please share your updates for <strong>{programme} — {workstream}</strong>
-            covering the following areas:</p>
-            <ul>
-                <li><strong>Key Highlights</strong></li>
-                <li><strong>Delivery Updates</strong></li>
-                <li><strong>Innovation &amp; Value Add</strong></li>
-            </ul>
-            <p>Please reply to this email with your updates at your earliest convenience.</p>
-            <p>Thank you,<br/>{self._settings.app_name}</p>
-            </body></html>
-            """
-        self.send_email(lead_email, subject, body_html)
+        """Send a content submission request to a workstream lead with a portal link."""
+        subject = (
+            f"{self._settings.newsletter_subject_prefix} "
+            f"Action Required: Submit Your Updates — {programme} / {workstream}"
+        )
 
-    def send_approval_request(
-        self,
-        lead_email: str,
-        lead_name: str,
-        programme: str,
-        workstream: str,
-        reworded_content: str,
-    ) -> None:
-        """Send reworded content to a lead for approval."""
-        subject = f"{self._settings.newsletter_subject_prefix} Review Your Section — {programme} / {workstream}"
+        is_quality = (
+            programme.lower() == "quality" or workstream.lower() == "quality metrics"
+        )
+
+        if is_quality:
+            guidance = """
+            <ul style="font-family:Calibri,sans-serif; color:#333; font-size:14px; line-height:1.8;">
+              <li><strong>Lean Projects Completed</strong></li>
+              <li><strong>GB Projects Completed</strong></li>
+              <li><strong>Lean Trained &amp; Tested</strong> (%)</li>
+              <li><strong>GB Trained &amp; Tested</strong> (%)</li>
+              <li><strong>Lean Certified</strong> (%)</li>
+              <li><strong>GB Certified</strong> (%)</li>
+            </ul>"""
+        else:
+            guidance = """
+            <ul style="font-family:Calibri,sans-serif; color:#333; font-size:14px; line-height:1.8;">
+              <li><strong>Key Highlights</strong></li>
+              <li><strong>Delivery Updates</strong></li>
+              <li><strong>Innovation &amp; Value Add</strong></li>
+            </ul>"""
+
         body_html = f"""
-        <html><body>
-        <p>Hi {lead_name},</p>
-        <p>Thank you for your inputs. Below is the professionally reworded version of
-        your section for <strong>{programme} — {workstream}</strong>:</p>
-        <hr/>
-        {reworded_content}
-        <hr/>
-        <p>Please reply with <strong>"Approved"</strong> if this looks good, or share
-        any changes you'd like made.</p>
-        <p>Thank you,<br/>{self._settings.app_name}</p>
+        <html><body style="font-family:Calibri,sans-serif; max-width:600px; margin:auto;">
+          <div style="background:#08312A; padding:20px 32px; border-radius:8px 8px 0 0;">
+            <h2 style="color:#00E47C; margin:0; font-size:20px;">📋 Newsletter Update Request</h2>
+            <p style="color:#fff; margin:4px 0 0; font-size:13px;">Boehringer Ingelheim — Digital Employee</p>
+          </div>
+          <div style="background:#fff; padding:28px 32px; border:1px solid #e5e7eb; border-top:none; border-radius:0 0 8px 8px;">
+            <p style="font-size:15px;">Hi <strong>{lead_name.split()[0]}</strong>,</p>
+            <p style="font-size:14px; color:#444;">
+              We are preparing the <strong>{edition_title}</strong> and need your updates for
+              <strong>{programme} — {workstream}</strong>.
+            </p>
+            <p style="font-size:14px; color:#444;">Please cover the following areas:</p>
+            {guidance}
+            <p style="font-size:14px; color:#444;">
+              Click the button below to open your personalised submission portal.
+              The AI will professionally reword your bullet points and you can review,
+              refine, and approve them — all in one place. <strong>No email reply needed.</strong>
+            </p>
+            {_cta_button(portal_url, "Submit My Updates →")}
+            <hr style="border:none; border-top:1px solid #e5e7eb; margin:24px 0;"/>
+            <p style="font-size:12px; color:#999;">
+              This link is personal to you and expires in {self._settings.portal_token_ttl_days} days.
+              If you have any questions, reply to this email.
+            </p>
+          </div>
         </body></html>
         """
         self.send_email(lead_email, subject, body_html)
-
-    def send_newsletter_for_review(
-        self,
-        reviewer_email: str,
-        reviewer_name: str,
-        newsletter_html: str,
-        edition_title: str,
-    ) -> None:
-        """Send the consolidated newsletter to the delivery leader for review.
-
-        The newsletter content is embedded as rendered HTML so it's both
-        readable and editable. Instructions are embedded inline by the template.
-        """
-        subject = f"{self._settings.newsletter_subject_prefix} {edition_title} — For Your Review"
-        self.send_email(reviewer_email, subject, newsletter_html)
 
     def send_programme_section_for_review(
         self,
@@ -316,39 +175,76 @@ class EmailService:
         programme: str,
         section_html: str,
         edition_title: str,
+        portal_url: str,
     ) -> None:
-        """Send a programme's consolidated section to the programme lead for approval.
-
-        This is the intermediate review that happens after all workstream leads
-        in a multi-workstream programme have approved their individual sections.
-        """
-        subject = f"{self._settings.newsletter_subject_prefix} {edition_title} — {programme} Section: Awaiting Your Approval"
+        """Send the consolidated programme section to the programme lead for portal review."""
+        subject = (
+            f"{self._settings.newsletter_subject_prefix} "
+            f"{edition_title} — {programme} Section: Awaiting Your Review"
+        )
         body_html = f"""
-        <html><body>
-        <p>Hi {programme_lead_name},</p>
-        <p>The workstream leads for <strong>{programme}</strong> have all approved their sections.
-        Below is the consolidated content for your programme that will go into the
-        <strong>{edition_title}</strong>.</p>
-        <p>Please review the content below and reply with <strong>"Approved"</strong>
-        if it looks good, or share any changes you'd like incorporated.</p>
-        <hr/>
-        {section_html}
-        <hr/>
-        <p>Thank you,<br/>{self._settings.app_name}</p>
+        <html><body style="font-family:Calibri,sans-serif; max-width:700px; margin:auto;">
+          <div style="background:#08312A; padding:20px 32px; border-radius:8px 8px 0 0;">
+            <h2 style="color:#00E47C; margin:0; font-size:20px;">👁️ Programme Section Review</h2>
+            <p style="color:#fff; margin:4px 0 0; font-size:13px;">Boehringer Ingelheim — Digital Employee</p>
+          </div>
+          <div style="background:#fff; padding:28px 32px; border:1px solid #e5e7eb; border-top:none; border-radius:0 0 8px 8px;">
+            <p style="font-size:15px;">Hi <strong>{programme_lead_name.split()[0]}</strong>,</p>
+            <p style="font-size:14px; color:#444;">
+              All workstream leads in <strong>{programme}</strong> have submitted and approved their
+              contributions. The consolidated section for <strong>{edition_title}</strong> is ready
+              for your review.
+            </p>
+            <p style="font-size:14px; color:#444;">
+              Click the button below to open the review portal where you can read the section,
+              chat with the AI to request any refinements, and approve.
+            </p>
+            {_cta_button(portal_url, "Review &amp; Approve →")}
+            <p style="font-size:12px; color:#999;">
+              This link expires in {self._settings.portal_token_ttl_days} days.
+            </p>
+          </div>
         </body></html>
         """
         self.send_email(programme_lead_email, subject, body_html)
 
-
-    def send_newsletter_to_client(
+    def send_newsletter_for_review(
         self,
-        distribution_list: list[str],
+        reviewer_email: str,
+        reviewer_name: str,
         newsletter_html: str,
         edition_title: str,
+        portal_url: str,
     ) -> None:
-        """Send the final approved newsletter to the distribution list (clients, stakeholders, leaders)."""
-        subject = f"{self._settings.newsletter_subject_prefix} {edition_title}"
-        self.send_email(distribution_list, subject, newsletter_html)
+        """Send the consolidated newsletter to Ashwin or Anuj for review via the portal."""
+        subject = (
+            f"{self._settings.newsletter_subject_prefix} "
+            f"{edition_title} — For Your Review & Approval"
+        )
+        body_html = f"""
+        <html><body style="font-family:Calibri,sans-serif; max-width:700px; margin:auto;">
+          <div style="background:#08312A; padding:20px 32px; border-radius:8px 8px 0 0;">
+            <h2 style="color:#00E47C; margin:0; font-size:20px;">✅ Newsletter Ready for Review</h2>
+            <p style="color:#fff; margin:4px 0 0; font-size:13px;">Boehringer Ingelheim — Digital Employee</p>
+          </div>
+          <div style="background:#fff; padding:28px 32px; border:1px solid #e5e7eb; border-top:none; border-radius:0 0 8px 8px;">
+            <p style="font-size:15px;">Hi <strong>{reviewer_name.split()[0]}</strong>,</p>
+            <p style="font-size:14px; color:#444;">
+              The <strong>{edition_title}</strong> is ready for your review. All workstream leads
+              have approved their sections.
+            </p>
+            <p style="font-size:14px; color:#444;">
+              Click the button below to open the review portal where you can read the full newsletter,
+              ask the AI to refine any section, and approve or send feedback.
+            </p>
+            {_cta_button(portal_url, "Review Full Newsletter →")}
+            <p style="font-size:12px; color:#999;">
+              This link expires in {self._settings.portal_token_ttl_days} days.
+            </p>
+          </div>
+        </body></html>
+        """
+        self.send_email(reviewer_email, subject, body_html)
 
     def send_reminder(
         self,
@@ -358,24 +254,85 @@ class EmailService:
         workstream: str,
         edition_title: str,
         reminder_number: int,
+        portal_url: str,
     ) -> None:
-        """Send a follow-up reminder to a non-responsive lead."""
-        subject = f"{self._settings.newsletter_subject_prefix} Reminder #{reminder_number} — {programme} / {workstream}"
+        """Send a follow-up reminder with a fresh portal link."""
+        subject = (
+            f"{self._settings.newsletter_subject_prefix} "
+            f"Reminder #{reminder_number} — {programme} / {workstream}"
+        )
         body_html = f"""
-        <html><body>
-        <p>Hi {lead_name},</p>
-        <p>This is a gentle reminder regarding the <strong>{edition_title}</strong>.</p>
-        <p>We are still awaiting your updates for <strong>{programme} — {workstream}</strong>.</p>
-        <p>Could you please share your inputs covering:</p>
-        <ol>
-            <li><strong>Key Highlights</strong></li>
-            <li><strong>Delivery Updates</strong></li>
-            <li><strong>Innovation &amp; Value Add</strong></li>
-        </ol>
-        <p>Thank you,<br/>{self._settings.app_name}</p>
+        <html><body style="font-family:Calibri,sans-serif; max-width:600px; margin:auto;">
+          <div style="background:#08312A; padding:20px 32px; border-radius:8px 8px 0 0;">
+            <h2 style="color:#00E47C; margin:0; font-size:20px;">🔔 Reminder #{reminder_number}</h2>
+            <p style="color:#fff; margin:4px 0 0; font-size:13px;">Boehringer Ingelheim — Digital Employee</p>
+          </div>
+          <div style="background:#fff; padding:28px 32px; border:1px solid #e5e7eb; border-top:none; border-radius:0 0 8px 8px;">
+            <p style="font-size:15px;">Hi <strong>{lead_name.split()[0]}</strong>,</p>
+            <p style="font-size:14px; color:#444;">
+              This is a gentle reminder — we are still awaiting your newsletter updates for
+              <strong>{programme} — {workstream}</strong> in the <strong>{edition_title}</strong>.
+            </p>
+            <p style="font-size:14px; color:#444;">
+              Your submission portal is still open. It takes just a few minutes!
+            </p>
+            {_cta_button(portal_url, "Submit My Updates →")}
+            <p style="font-size:12px; color:#999;">
+              This is a new link — it expires in {self._settings.portal_token_ttl_days} days.
+            </p>
+          </div>
         </body></html>
         """
         self.send_email(lead_email, subject, body_html)
+
+    def send_reviewer_reminder(
+        self,
+        reviewer_email: str,
+        reviewer_name: str,
+        role_label: str,
+        edition_title: str,
+        reminder_number: int,
+        portal_url: str,
+    ) -> None:
+        """Send a follow-up reminder to a reviewer (programme lead, Ashwin, or Anuj)."""
+        first_name = reviewer_name.split()[0]
+        subject = (
+            f"{self._settings.newsletter_subject_prefix} "
+            f"Reminder #{reminder_number} — Action Required: {edition_title}"
+        )
+        body_html = f"""
+        <html><body style="font-family:Calibri,sans-serif; max-width:600px; margin:auto;">
+          <div style="background:#08312A; padding:20px 32px; border-radius:8px 8px 0 0;">
+            <h2 style="color:#00E47C; margin:0; font-size:20px;">🔔 Reminder #{reminder_number}</h2>
+            <p style="color:#fff; margin:4px 0 0; font-size:13px;">Boehringer Ingelheim — Digital Employee</p>
+          </div>
+          <div style="background:#fff; padding:28px 32px; border:1px solid #e5e7eb; border-top:none; border-radius:0 0 8px 8px;">
+            <p style="font-size:15px;">Hi <strong>{first_name}</strong>,</p>
+            <p style="font-size:14px; color:#444;">
+              This is a gentle reminder — your review and approval of the
+              <strong>{edition_title}</strong> is still pending as <strong>{role_label}</strong>.
+            </p>
+            <p style="font-size:14px; color:#444;">
+              Please use the button below to open your review portal and approve or request changes.
+            </p>
+            {_cta_button(portal_url, "Open Review Portal →")}
+            <p style="font-size:12px; color:#999;">
+              This is a new link — it expires in {self._settings.portal_token_ttl_days} days.
+            </p>
+          </div>
+        </body></html>
+        """
+        self.send_email(reviewer_email, subject, body_html)
+
+    def send_newsletter_to_client(
+        self,
+        distribution_list: list[str],
+        newsletter_html: str,
+        edition_title: str,
+    ) -> None:
+        """Send the final approved newsletter to the distribution list."""
+        subject = f"{self._settings.newsletter_subject_prefix} {edition_title}"
+        self.send_email(distribution_list, subject, newsletter_html)
 
     def send_skip_notification(
         self,
@@ -385,48 +342,37 @@ class EmailService:
         skipped_leads: list[dict],
         all_lead_emails: list[str],
     ) -> None:
-        """Notify the delivery leader about skipped workstreams due to unresponsive leads.
-
-        CC all leads for transparency.
-
-        Args:
-            skipped_leads: list of dicts with keys: lead_name, lead_email, programme, workstream, reminder_count
-        """
-        subject = f"{self._settings.newsletter_subject_prefix} {edition_title} — Skipped Workstreams"
-
-        skipped_rows = ""
-        for s in skipped_leads:
-            skipped_rows += f"""
-            <tr>
-                <td style="padding: 8px; border: 1px solid #e5e7eb;">{s['programme']}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb;">{s['workstream']}</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb;">{s['lead_name']} ({s['lead_email']})</td>
-                <td style="padding: 8px; border: 1px solid #e5e7eb;">{s['reminder_count']} reminders sent</td>
+        """Notify the delivery leader about workstreams skipped due to non-response."""
+        subject = (
+            f"{self._settings.newsletter_subject_prefix} "
+            f"{edition_title} — Skipped Workstreams"
+        )
+        skipped_rows = "".join(
+            f"""<tr>
+                <td style="padding:8px;border:1px solid #e5e7eb;">{s['programme']}</td>
+                <td style="padding:8px;border:1px solid #e5e7eb;">{s['workstream']}</td>
+                <td style="padding:8px;border:1px solid #e5e7eb;">{s['lead_name']} ({s['lead_email']})</td>
+                <td style="padding:8px;border:1px solid #e5e7eb;">{s['reminder_count']} reminders</td>
             </tr>"""
-
+            for s in skipped_leads
+        )
         body_html = f"""
-        <html><body>
-        <p>Hi {reviewer_name},</p>
-        <p>While preparing the <strong>{edition_title}</strong>, the following workstream leads
-        did not respond despite multiple reminders. Their sections have been
-        <strong>excluded</strong> from this edition:</p>
-        <table style="border-collapse: collapse; width: 100%; margin: 16px 0;">
-            <thead>
-                <tr style="background: #f9fafb;">
-                    <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Programme</th>
-                    <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Workstream</th>
-                    <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Lead</th>
-                    <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Attempts</th>
-                </tr>
-            </thead>
+        <html><body style="font-family:Calibri,sans-serif; max-width:700px; margin:auto;">
+          <p>Hi {reviewer_name},</p>
+          <p>While preparing <strong>{edition_title}</strong>, the following leads did not respond.
+          Their sections have been <strong>excluded</strong>:</p>
+          <table style="border-collapse:collapse;width:100%;margin:16px 0;">
+            <thead><tr style="background:#f9fafb;">
+              <th style="padding:8px;border:1px solid #e5e7eb;text-align:left;">Programme</th>
+              <th style="padding:8px;border:1px solid #e5e7eb;text-align:left;">Workstream</th>
+              <th style="padding:8px;border:1px solid #e5e7eb;text-align:left;">Lead</th>
+              <th style="padding:8px;border:1px solid #e5e7eb;text-align:left;">Attempts</th>
+            </tr></thead>
             <tbody>{skipped_rows}</tbody>
-        </table>
-        <p>The newsletter will proceed with the available approved content.
-        Please review and approve once the consolidated version is ready.</p>
-        <p>Thank you,<br/>{self._settings.app_name}</p>
+          </table>
+          <p>The newsletter will proceed with available approved content.</p>
+          <p>Thank you,<br/>{self._settings.app_name}</p>
         </body></html>
         """
-        # Send to reviewer, CC all leads
         recipients = [reviewer_email] + [e for e in all_lead_emails if e != reviewer_email]
         self.send_email(recipients, subject, body_html)
-

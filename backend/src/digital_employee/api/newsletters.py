@@ -246,8 +246,9 @@ async def trigger_newsletter(
 
     await db.flush()
 
-    # Fire off the Celery task to send emails
+    # Fire off portal links to all leads
     from digital_employee.services.email_service import EmailService
+    from digital_employee.services.token_service import create_token_async, build_portal_url
     from digital_employee.settings import get_settings
 
     settings = get_settings()
@@ -257,19 +258,38 @@ async def trigger_newsletter(
         select(LeadSubmission).where(LeadSubmission.edition_id == edition.id)
     )
     for sub in subs_result.scalars().all():
+        # Generate a unique, time-limited portal token for each lead
+        token_str = await create_token_async(
+            db,
+            role="lead",
+            action_type="submit",
+            actor_email=sub.lead_email,
+            actor_name=sub.lead_name,
+            edition_id=edition.id,
+            submission_id=sub.id,
+            context={
+                "programme": sub.programme,
+                "workstream": sub.workstream,
+                "edition_title": title,
+            },
+            settings=settings,
+        )
+        portal_url = build_portal_url(settings, token_str, page="submit")
+
         email_svc.send_update_request(
             lead_email=sub.lead_email,
             lead_name=sub.lead_name,
             programme=sub.programme,
             workstream=sub.workstream,
             edition_title=title,
+            portal_url=portal_url,
         )
         sub.status = SubmissionStatus.PENDING
         db.add(AuditLog(
             edition_id=edition.id,
             action=AuditAction.REQUEST_SENT,
             actor="system",
-            detail=f"Update request sent to {sub.lead_name} ({sub.lead_email})",
+            detail=f"Portal link sent to {sub.lead_name} ({sub.lead_email})",
         ))
 
     edition.status = EditionStatus.COLLECTING

@@ -12,9 +12,20 @@ from digital_employee.settings import LLMProvider, Settings
 
 logger = structlog.get_logger(__name__)
 
+# ── Shared Digital Employee Persona ─────────────────────────────────────────
+
+DIGITAL_EMPLOYEE_PERSONA = (
+    "You are BI's Digital Employee — an intelligent, warm, and professional AI colleague "
+    "at Boehringer Ingelheim Information Management Shared Services. "
+    "You address people by their first name when known. "
+    "You write with clarity, confidence, and a human touch. "
+    "You are concise and never verbose. "
+    "You never fabricate facts or invent content.\n\n"
+)
+
 # ── Prompt templates ─────────────────────────────────────────────────────────
 
-REWORD_SYSTEM_PROMPT = """You are a professional communication specialist for a technology consulting firm.
+REWORD_SYSTEM_PROMPT = DIGITAL_EMPLOYEE_PERSONA + """You are acting as a professional communication specialist for a technology consulting firm.
 Your task is to take raw updates from a team lead and REWORD them into polished, professional newsletter content.
 
 == WORKSTREAM-SPECIFIC RULES ==
@@ -51,143 +62,136 @@ Example of CORRECT behavior:
 - Lead says: "Completed 1ID decommissioning" → You write: "Successfully completed the 1ID decommissioning process." ← THIS IS CORRECT. Same facts, polished language.
 """
 
-CONSOLIDATE_SYSTEM_PROMPT = """You are assembling a monthly client newsletter for Boehringer Ingelheim's Information Management Shared Services.
+CONSOLIDATE_SYSTEM_PROMPT = DIGITAL_EMPLOYEE_PERSONA + """You are assembling a monthly client newsletter for Boehringer Ingelheim's Information Management Shared Services.
 You will receive approved content sections from multiple programme/workstream leads.
-Consolidate them into a single, cohesive newsletter body. 
 
-== REQUIRED SECTIONS ==
-You must structure the output into exactly these FOUR overarching sections. The 'Key Contacts' section is handled automatically by the system and you should NOT write it.
-IMPORTANT: The "Quality" metrics strictly belong in their dashboard (Section 3). Do NOT place Quality updates inside Highlights, Delivery Updates, or Innovation & Value Add.
+== YOUR ONLY JOB ==
+Fill in the CONTENT BLOCKS inside each of the four mandatory sections below.
+Do NOT change the section order. Do NOT rename sections. Do NOT invent new sections.
+Do NOT omit any of the four sections — all four MUST appear, even if content is minimal.
 
-Each section MUST use its specific icon:
-1. 🌟 KEY HIGHLIGHTS (across all programs, excluding Quality)
-2. 🚀 DELIVERY UPDATES (across all programs, excluding Quality)
-3. ⚙️ QUALITY (Metrics must be mapped into the exact HTML block provided below)
-4. 💡 INNOVATION & VALUE ADD (across all programs, excluding Quality)
+== YOU MUST NEVER GENERATE THESE — THE SYSTEM HANDLES THEM AUTOMATICALLY ==
+- ❌ The BI header banner (BOEHRINGER INGELHEIM / INFORMATION MANAGEMENT SHARED SERVICES / date / title)
+- ❌ The navigation bar (DATA | BUSINESS REPORTING | SPECIALTY | DIGITAL | LEADERSHIP | GENAI | QUALITY | INNOVATION | KEY CONTACTS)
+- ❌ The 👤 KEY CONTACTS section (16-person grid with avatar photos — hardcoded in the system template)
+- ❌ The footer ("Prepared autonomously by the AI Digital Employee..." / copyright / "More updates to follow")
+- ❌ Any <html>, <head>, <body>, or <!DOCTYPE> tags
+These components are injected by the system Jinja template AFTER your output. If you include them, they will appear TWICE.
 
-== STRUCTURAL & CREATIVE FREEDOM ==
-You have creative freedom to organize the sub-content within those 3 major sections.
-- Grouping: Under "DELIVERY UPDATES", use sub-headers or 2-column tables to segment by Program/Workstream.
-- Adapt dynamically: If a lot of text exists, use full-width blocks or bullet lists. If comparing multiple small points, use the 2-column grids.
-- Ensure the result is a 10/10 premium, SaaS-like corporate newsletter.
+== STRICT CONTENT RULES ==
+- Use ONLY information provided by the leads. Never invent facts, metrics, or updates.
+- Quality metrics (Lean/GB numbers) belong ONLY in Section 3 (⚙️ QUALITY). NEVER put them in other sections.
+- If a section has no updates, write "No updates reported for this period." inside it.
 
-== REQUIRED CORPORATE COLORS ==
-- Primary Dark Green: #08312A
-- Highlight Neon Green: #00E47C
-- Beige/Grey/White Backgrounds: #E5E3DE, #f2f2f2, #ffffff
-- Text Colors: #ffffff (on dark backgrounds), #000000 or #333333 (on light backgrounds).
+== REQUIRED CORPORATE COLOURS ==
+- Primary Dark Green: #08312A  |  Neon Green: #00E47C
+- Backgrounds: #E5E3DE, #f2f2f2, #ffffff
+- Text: #ffffff on dark; #000000 or #333333 on light
 
-== FORMAT RULES ==
-- Output ONLY valid HTML for the body content (no <html>, <head>, or <body> tags).
-- Do NOT use standard Markdown headers (#, ##). Use inline CSS styles (e.g., `<h2 style="...">`).
-- Maintain a highly professional, business-formal, and confident tone.
+== MANDATORY OUTPUT STRUCTURE — USE THIS EXACT SKELETON ==
+Your entire response MUST follow this skeleton exactly.
+Only replace the [FILL IN CONTENT] placeholders with real content.
+Do NOT alter any HTML outside those placeholders.
+Do NOT include any delimiter markers, comments, or instructions in your output — output ONLY the HTML.
 
-== STRONGLY RECOMMENDED HTML PATTERNS ==
-
-1. Section Banners (Use for KEY HIGHLIGHTS, DELIVERY UPDATES, and INNOVATION & VALUE ADD):
+<!-- ===== SECTION 1: KEY HIGHLIGHTS ===== -->
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 20px; font-family: Calibri, sans-serif;">
-    <tr><td height="15" style="background-color: #08312A;"></td></tr>
-    <tr>
-        <td align="center" style="background-color: #f2f2f2; padding: 15px;">
-            <h2 style="margin: 0; font-size: 26px; color: #08312A; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">[ICON] [SECTION NAME]</h2>
-        </td>
-    </tr>
-    <tr><td height="15" style="background-color: #08312A;"></td></tr>
+  <tr><td height="15" style="background-color: #08312A;"></td></tr>
+  <tr><td align="center" style="background-color: #f2f2f2; padding: 15px;">
+    <h2 style="margin: 0; font-size: 26px; color: #08312A; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">🌟 KEY HIGHLIGHTS</h2>
+  </td></tr>
+  <tr><td height="15" style="background-color: #08312A;"></td></tr>
 </table>
+[FILL IN KEY HIGHLIGHTS CONTENT — use programme blocks and bullet lists. Group by programme/workstream.]
 
-2. Major Programme Block:
-<div style="background-color: #ffffff; padding: 5px 20px; margin-bottom: 20px; font-family: Calibri, sans-serif; border-left: 5px solid #00E47C;">
-    <h3 style="color: #08312A; font-size: 20px; margin-top: 0; margin-bottom: 10px;">Programme Name</h3>
-    <ul style="margin: 0; padding-left: 20px; color: #333333;">
-        <li style="font-size: 15px; margin-bottom: 8px;">Update detail...</li>
-    </ul>
-</div>
-
-3. 2-Column Grid (For grouping workstreams side-by-side):
-<table width="100%" cellpadding="15" cellspacing="0" border="0" style="margin-bottom: 25px; background-color: #f2f2f2; font-family: Calibri, sans-serif; border: 1px solid #E5E3DE;">
-    <tr>
-        <td width="48%" valign="top" style="background-color: #08312A; text-align: center;">
-            <strong style="color: #ffffff; font-size: 16px; text-transform: uppercase;">Workstream A</strong>
-        </td>
-        <td width="4%"></td>
-        <td width="48%" valign="top" style="background-color: #08312A; text-align: center;">
-            <strong style="color: #ffffff; font-size: 16px; text-transform: uppercase;">Workstream B</strong>
-        </td>
-    </tr>
-    <tr>
-        <td width="48%" valign="top" style="padding-top: 15px;">
-            <ul style="margin: 0; padding-left: 20px; color: #333333;">
-                <li style="font-size: 14px; margin-bottom: 8px;">Detail...</li>
-            </ul>
-        </td>
-        <td width="4%"></td>
-        <td width="48%" valign="top" style="padding-top: 15px;">
-            <ul style="margin: 0; padding-left: 20px; color: #333333;">
-                <li style="font-size: 14px; margin-bottom: 8px;">Detail...</li>
-            </ul>
-        </td>
-    </tr>
+<!-- ===== SECTION 2: DELIVERY UPDATES ===== -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 20px; font-family: Calibri, sans-serif;">
+  <tr><td height="15" style="background-color: #08312A;"></td></tr>
+  <tr><td align="center" style="background-color: #f2f2f2; padding: 15px;">
+    <h2 style="margin: 0; font-size: 26px; color: #08312A; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">🚀 DELIVERY UPDATES</h2>
+  </td></tr>
+  <tr><td height="15" style="background-color: #08312A;"></td></tr>
 </table>
+[FILL IN DELIVERY UPDATES CONTENT — use 2-column grids where workstreams pair well, otherwise programme blocks.]
 
-4. Quality Dashboard (YOU MUST USE THIS EXACT STRUCTURE FOR THE QUALITY SECTION. DO NOT CHANGE THE STYLES, just replace the [NUM] placeholders with the numbers provided by the Quality Lead):
+<!-- ===== SECTION 3: QUALITY ===== -->
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 30px; margin-bottom: 20px; font-family: Calibri, sans-serif; background-color: #E5E3DE;">
-  <tr>
-    <td colspan="6" style="padding: 0;">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-        <tr><td height="12" style="background-color: #08312A;"></td></tr>
-        <tr>
-          <td align="center" style="background-color: #ffffff; padding: 10px;">
-            <h2 style="margin: 0; font-size: 26px; color: #08312A; text-transform: uppercase;">⚙️ QUALITY</h2>
-          </td>
-        </tr>
-        <tr><td height="12" style="background-color: #08312A;"></td></tr>
-      </table>
-    </td>
-  </tr>
+  <tr><td colspan="6" style="padding: 0;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr><td height="12" style="background-color: #08312A;"></td></tr>
+      <tr><td align="center" style="background-color: #ffffff; padding: 10px;">
+        <h2 style="margin: 0; font-size: 26px; color: #08312A; text-transform: uppercase;">⚙️ QUALITY</h2>
+      </td></tr>
+      <tr><td height="12" style="background-color: #08312A;"></td></tr>
+    </table>
+  </td></tr>
   <tr>
     <td width="16.6%" align="center" valign="top" style="padding: 30px 5px 0 5px; border-right: 1px dashed #999;">
-      <div style="width: 70px; height: 70px; border-radius: 50%; background-color: #41cc73; margin: 0 auto; border: 4px solid #ffffff; outline: 2px solid #08312A; text-align: center; line-height: 70px; font-weight: bold; font-size: 22px; color: #000;">[NUM]</div>
+      <div style="width:70px;height:70px;border-radius:50%;background-color:#41cc73;margin:0 auto;border:4px solid #ffffff;outline:2px solid #08312A;text-align:center;line-height:70px;font-weight:bold;font-size:22px;color:#000;">[NUM1]</div>
     </td>
     <td width="16.6%" align="center" valign="top" style="padding: 30px 5px 0 5px; border-right: 1px dashed #999;">
-      <div style="width: 70px; height: 70px; border-radius: 50%; background-color: #41cc73; margin: 0 auto; border: 4px solid #ffffff; outline: 2px solid #08312A; text-align: center; line-height: 70px; font-weight: bold; font-size: 22px; color: #000;">[NUM]</div>
+      <div style="width:70px;height:70px;border-radius:50%;background-color:#41cc73;margin:0 auto;border:4px solid #ffffff;outline:2px solid #08312A;text-align:center;line-height:70px;font-weight:bold;font-size:22px;color:#000;">[NUM2]</div>
     </td>
     <td width="16.6%" align="center" valign="top" style="padding: 30px 5px 0 5px; border-right: 1px dashed #999;">
-      <div style="width: 70px; height: 70px; border-radius: 50%; background-color: #41cc73; margin: 0 auto; border: 4px solid #ffffff; outline: 2px solid #08312A; text-align: center; line-height: 70px; font-weight: bold; font-size: 22px; color: #000;">[NUM]%</div>
+      <div style="width:70px;height:70px;border-radius:50%;background-color:#41cc73;margin:0 auto;border:4px solid #ffffff;outline:2px solid #08312A;text-align:center;line-height:70px;font-weight:bold;font-size:22px;color:#000;">[NUM3]%</div>
     </td>
     <td width="16.6%" align="center" valign="top" style="padding: 30px 5px 0 5px; border-right: 1px dashed #999;">
-      <div style="width: 70px; height: 70px; border-radius: 50%; background-color: #41cc73; margin: 0 auto; border: 4px solid #ffffff; outline: 2px solid #08312A; text-align: center; line-height: 70px; font-weight: bold; font-size: 22px; color: #000;">[NUM]%</div>
+      <div style="width:70px;height:70px;border-radius:50%;background-color:#41cc73;margin:0 auto;border:4px solid #ffffff;outline:2px solid #08312A;text-align:center;line-height:70px;font-weight:bold;font-size:22px;color:#000;">[NUM4]%</div>
     </td>
     <td width="16.6%" align="center" valign="top" style="padding: 30px 5px 0 5px; border-right: 1px dashed #999;">
-      <div style="width: 70px; height: 70px; border-radius: 50%; background-color: #41cc73; margin: 0 auto; border: 4px solid #ffffff; outline: 2px solid #08312A; text-align: center; line-height: 70px; font-weight: bold; font-size: 22px; color: #000;">[NUM]%</div>
+      <div style="width:70px;height:70px;border-radius:50%;background-color:#41cc73;margin:0 auto;border:4px solid #ffffff;outline:2px solid #08312A;text-align:center;line-height:70px;font-weight:bold;font-size:22px;color:#000;">[NUM5]%</div>
     </td>
     <td width="16.6%" align="center" valign="top" style="padding: 30px 5px 0 5px;">
-      <div style="width: 70px; height: 70px; border-radius: 50%; background-color: #41cc73; margin: 0 auto; border: 4px solid #ffffff; outline: 2px solid #08312A; text-align: center; line-height: 70px; font-weight: bold; font-size: 22px; color: #000;">[NUM]%</div>
+      <div style="width:70px;height:70px;border-radius:50%;background-color:#41cc73;margin:0 auto;border:4px solid #ffffff;outline:2px solid #08312A;text-align:center;line-height:70px;font-weight:bold;font-size:22px;color:#000;">[NUM6]%</div>
     </td>
   </tr>
   <tr>
-    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;">
-      <div style="background-color: #111111; color: #ffffff; padding: 12px 5px; font-size: 11px; font-weight: normal; text-align: center;">Lean Projects<br>Completed</div>
-    </td>
-    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;">
-      <div style="background-color: #111111; color: #ffffff; padding: 12px 5px; font-size: 11px; font-weight: normal; text-align: center;">GB project<br>Completed</div>
-    </td>
-    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;">
-      <div style="background-color: #111111; color: #ffffff; padding: 12px 5px; font-size: 11px; font-weight: normal; text-align: center;">Lean Trained<br>&amp; Tested</div>
-    </td>
-    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;">
-      <div style="background-color: #111111; color: #ffffff; padding: 12px 5px; font-size: 11px; font-weight: normal; text-align: center;">GB Trained<br>&amp; Tested</div>
-    </td>
-    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;">
-      <div style="background-color: #111111; color: #ffffff; padding: 12px 5px; font-size: 11px; font-weight: normal; text-align: center;">Lean<br>Certified</div>
-    </td>
-    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;">
-      <div style="background-color: #111111; color: #ffffff; padding: 12px 5px; font-size: 11px; font-weight: normal; text-align: center;">GB<br>Certified</div>
-    </td>
+    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;"><div style="background-color:#111111;color:#ffffff;padding:12px 5px;font-size:11px;font-weight:normal;text-align:center;">Lean Projects<br>Completed</div></td>
+    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;"><div style="background-color:#111111;color:#ffffff;padding:12px 5px;font-size:11px;font-weight:normal;text-align:center;">GB project<br>Completed</div></td>
+    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;"><div style="background-color:#111111;color:#ffffff;padding:12px 5px;font-size:11px;font-weight:normal;text-align:center;">Lean Trained<br>&amp; Tested</div></td>
+    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;"><div style="background-color:#111111;color:#ffffff;padding:12px 5px;font-size:11px;font-weight:normal;text-align:center;">GB Trained<br>&amp; Tested</div></td>
+    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;"><div style="background-color:#111111;color:#ffffff;padding:12px 5px;font-size:11px;font-weight:normal;text-align:center;">Lean<br>Certified</div></td>
+    <td align="center" valign="top" style="padding: 30px 2px 20px 2px;"><div style="background-color:#111111;color:#ffffff;padding:12px 5px;font-size:11px;font-weight:normal;text-align:center;">GB<br>Certified</div></td>
+  </tr>
+</table>
+
+<!-- ===== SECTION 4: INNOVATION & VALUE ADD ===== -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 20px; font-family: Calibri, sans-serif;">
+  <tr><td height="15" style="background-color: #08312A;"></td></tr>
+  <tr><td align="center" style="background-color: #f2f2f2; padding: 15px;">
+    <h2 style="margin: 0; font-size: 26px; color: #08312A; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">💡 INNOVATION &amp; VALUE ADD</h2>
+  </td></tr>
+  <tr><td height="15" style="background-color: #08312A;"></td></tr>
+</table>
+[FILL IN INNOVATION & VALUE ADD CONTENT — group by programme/workstream. Only include genuine AI/automation/innovation updates.]
+
+
+== AVAILABLE HTML BUILDING BLOCKS (use inside [FILL IN] placeholders only) ==
+
+Programme Block (use inside sections):
+<div style="background-color:#ffffff;padding:5px 20px;margin-bottom:20px;font-family:Calibri,sans-serif;border-left:5px solid #00E47C;">
+  <h3 style="color:#08312A;font-size:20px;margin-top:0;margin-bottom:10px;">Programme Name</h3>
+  <ul style="margin:0;padding-left:20px;color:#333333;">
+    <li style="font-size:15px;margin-bottom:8px;">Update detail...</li>
+  </ul>
+</div>
+
+2-Column Grid (use in DELIVERY UPDATES when 2 workstreams pair well):
+<table width="100%" cellpadding="15" cellspacing="0" border="0" style="margin-bottom:25px;background-color:#f2f2f2;font-family:Calibri,sans-serif;border:1px solid #E5E3DE;">
+  <tr>
+    <td width="48%" valign="top" style="background-color:#08312A;text-align:center;"><strong style="color:#ffffff;font-size:16px;text-transform:uppercase;">Workstream A</strong></td>
+    <td width="4%"></td>
+    <td width="48%" valign="top" style="background-color:#08312A;text-align:center;"><strong style="color:#ffffff;font-size:16px;text-transform:uppercase;">Workstream B</strong></td>
+  </tr>
+  <tr>
+    <td width="48%" valign="top" style="padding-top:15px;"><ul style="margin:0;padding-left:20px;color:#333333;"><li style="font-size:14px;margin-bottom:8px;">Detail...</li></ul></td>
+    <td width="4%"></td>
+    <td width="48%" valign="top" style="padding-top:15px;"><ul style="margin:0;padding-left:20px;color:#333333;"><li style="font-size:14px;margin-bottom:8px;">Detail...</li></ul></td>
   </tr>
 </table>
 """
 
-FEEDBACK_SYSTEM_PROMPT = """You are revising a newsletter based on feedback from the delivery leader.
+FEEDBACK_SYSTEM_PROMPT = DIGITAL_EMPLOYEE_PERSONA + """You are revising a newsletter based on feedback from the delivery leader.
 
 Two possible scenarios:
 1. **Specific instructions**: The leader gives instructions like "change X to Y" or "remove the section about Z".
@@ -249,10 +253,10 @@ You MUST respond with a valid JSON object with these exact keys:
 
 Intent definitions:
 - "newsletter_content": The sender is providing their updates/content for the newsletter
-- "newsletter_approval": The sender is approving reworded content OR approving a consolidated programme section OR Ashwin is approving the full newsletter (e.g. "looks good", "approved", "yes", "ok", any positive affirmation)
-- "newsletter_changes": The sender is requesting changes to reworded content OR requesting changes to a programme section OR Ashwin requesting changes
-- "anuj_approval": The delivery leader (Anuj) is approving the consolidated newsletter
-- "anuj_feedback": The delivery leader (Anuj) is providing feedback/changes on the newsletter
+- "newsletter_approval": The sender is approving reworded content OR approving a consolidated programme section OR {ashwin_name} is approving the full newsletter (e.g. "looks good", "approved", "yes", "ok", any positive affirmation)
+- "newsletter_changes": The sender is requesting changes to reworded content OR requesting changes to a programme section OR {ashwin_name} requesting changes
+- "anuj_approval": The delivery leader ({anuj_name}) is approving the consolidated newsletter
+- "anuj_feedback": The delivery leader ({anuj_name}) is providing feedback/changes on the newsletter
 - "newsletter_question": The sender is asking a question about the newsletter process, status, timeline, or past editions
 - "out_of_scope": ANYTHING not related to the newsletter — casual chat, general questions, requests for help with other tasks, greetings without newsletter context, etc.
 - "spam_ignore": Automated notifications, marketing, system alerts, or clearly irrelevant bulk emails
@@ -362,12 +366,9 @@ class LLMService:
     ) -> str:
         """Consolidate all approved sections into a single newsletter body.
 
-        Args:
-            sections: List of dicts with keys: programme, workstream, lead_name,
-                      content, is_single_workstream (bool)
-
-        For single-workstream programmes, the workstream heading is suppressed
-        in the newsletter — only the programme heading is shown.
+        Feeds all sections through CONSOLIDATE_SYSTEM_PROMPT which reorganises
+        content into the 4 standard sections (KEY HIGHLIGHTS / DELIVERY UPDATES /
+        QUALITY / INNOVATION & VALUE ADD).
         """
         sections_text = "\n\n---\n\n".join(
             f"Programme: {s['programme']}\n"
@@ -400,6 +401,13 @@ class LLMService:
             else:
                 lines = lines[1:]
             content = "\n".join(lines)
+
+        # Strip skeleton delimiters if the LLM echoed them back
+        import re
+        content = re.sub(r'<!--.*?-->\s*', '', content, flags=re.DOTALL)  # HTML comments
+        content = re.sub(r'---\s*(START|END)\s+OF\s+SKELETON\s*---', '', content, flags=re.IGNORECASE)
+        content = re.sub(r'\[FILL IN[^\]]*\]', '', content)  # unfilled placeholders
+        content = content.strip()
 
         logger.info("newsletter_consolidated", section_count=len(sections))
         return content
@@ -557,6 +565,8 @@ class LLMService:
             subject=subject,
             body=body[:3000],  # cap body length for token efficiency
             workflow_context=workflow_context,
+            ashwin_name=self._settings.ashwin_name,
+            anuj_name=self._settings.anuj_name,
         )
 
         messages = [

@@ -70,3 +70,40 @@ export const leadsApi = {
         }),
     getStats: () => fetchJSON<LeadStats[]>('/leads/stats'),
 }
+
+// ── Portal (magic-link, no auth) ──────────────────────────────────────────────
+
+export interface PortalTokenInfo {
+    actor_name: string
+    actor_email: string
+    role: string
+    action_type: string
+    context: { programme?: string; workstream?: string; edition_title?: string; section_html?: string }
+    reworded_content?: string | null
+    edition_title?: string | null
+}
+
+export const portalApi = {
+    getTokenInfo: (token: string) =>
+        fetchJSON<PortalTokenInfo>(`/portal/token/${token}`),
+
+    submit: (token: string, rawContent: string) =>
+        fetchJSON<{ reworded_content: string; submission_id: string }>('/portal/submit', {
+            method: 'POST',
+            body: JSON.stringify({ token, raw_content: rawContent }),
+        }),
+
+    approve: (token: string, finalContent: string) =>
+        fetchJSON<{ status: string; message: string }>('/portal/approve', {
+            method: 'POST',
+            body: JSON.stringify({ token, final_content: finalContent }),
+        }),
+
+    feedback: (token: string, feedbackText: string) =>
+        fetchJSON<{ status: string; message: string }>('/portal/feedback', {
+            method: 'POST',
+            body: JSON.stringify({ token, feedback_text: feedbackText }),
+        }),
+
+    // Note: /portal/chat uses SSE streaming — handled directly in the portal pages
+}

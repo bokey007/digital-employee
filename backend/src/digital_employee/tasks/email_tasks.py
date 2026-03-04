@@ -115,22 +115,11 @@ def _get_programme_lead_emails() -> set[str]:
 
 @celery_app.task(name="digital_employee.tasks.email_tasks.poll_inbox")
 def poll_inbox() -> dict:
-    """Poll the inbox and process EVERY email through the LLM brain.
-
-    No static pattern matching — every email gets classified by GPT-4o
-    with full workflow context, then routed appropriately.
+    """DEPRECATED: Inbox polling removed — inbound email is now handled by the web portal.
+    This task is retained as a no-op to avoid beat schedule errors.
     """
-    settings = Settings()
-    email_svc = EmailService(settings)
-
-    try:
-        emails = email_svc.fetch_unread_emails()
-    except Exception as exc:
-        logger.error("inbox_poll_failed", error=str(exc))
-        return {"error": str(exc)}
-
-    if not emails:
-        return {"processed": 0}
+    logger.info("poll_inbox_disabled", reason="Replaced by web portal magic-link workflow")
+    return {"status": "disabled", "reason": "Web portal workflow is active"}
 
     session = _get_sync_session()
     llm_svc = LLMService(settings)
@@ -274,13 +263,40 @@ def check_and_send_reminders() -> dict:
     sent = 0
     for sub in pending_subs:
         try:
+            edition = sub.edition
+            edition_title = edition.title if edition else "Newsletter"
+
+            # Generate a fresh portal token for this reminder
+            from digital_employee.services.token_service import create_token_sync, build_portal_url
+            portal_url = build_portal_url(
+                settings,
+                create_token_sync(
+                    session,
+                    role="lead",
+                    action_type="submit",
+                    actor_email=sub.lead_email,
+                    actor_name=sub.lead_name,
+                    edition_id=sub.edition_id,
+                    submission_id=sub.id,
+                    context={
+                        "programme": sub.programme,
+                        "workstream": sub.workstream,
+                        "edition_title": edition_title,
+                    },
+                    settings=settings,
+                ),
+                page="submit",
+            )
+            session.flush()
+
             email_svc.send_reminder(
                 lead_email=sub.lead_email,
                 lead_name=sub.lead_name,
                 programme=sub.programme,
                 workstream=sub.workstream,
-                edition_title=sub.edition.title if sub.edition else "Newsletter",
+                edition_title=edition_title,
                 reminder_number=sub.reminder_count + 1,
+                portal_url=portal_url,
             )
             sub.reminder_count += 1
             sub.last_reminder_at = datetime.now(timezone.utc)
@@ -289,7 +305,7 @@ def check_and_send_reminders() -> dict:
                 edition_id=sub.edition_id,
                 action=AuditAction.REMINDER_SENT,
                 actor="system",
-                detail=f"Reminder #{sub.reminder_count} sent to {sub.lead_email}",
+                detail=f"Reminder #{sub.reminder_count} sent to {sub.lead_email} with fresh portal link",
             ))
             sent += 1
         except Exception as exc:
@@ -365,3 +381,140 @@ def check_and_send_reminders() -> dict:
     logger.info("reminders_checked", sent=sent, skipped=skipped)
     return {"sent": sent, "skipped": skipped}
 
+
+# ── Reviewer Reminders (Programme Lead / Ashwin / Anuj) ──────────────────────
+
+def _count_reviewer_reminders(session, edition_id: int, actor_email: str) -> int:
+    """Count REMINDER_SENT AuditLog entries for a specific reviewer+edition."""
+    from sqlalchemy import func
+    result = session.execute(
+        select(func.count(AuditLog.id)).where(
+            AuditLog.edition_id == edition_id,
+            AuditLog.action == AuditAction.REMINDER_SENT,
+            AuditLog.detail.like(f"%{actor_email}%"),
+        )
+    ).scalar()
+    return result or 0
+
+
+def _days_since_utc(dt: datetime) -> int:
+    """Return how many full days have elapsed since dt (UTC-aware)."""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - dt).days
+
+
+@celery_app.task(name="digital_employee.tasks.email_tasks.send_reviewer_reminders")
+def send_reviewer_reminders() -> dict:
+    """Send up to 3 daily reminder emails to programme leads, Ashwin, and Anuj
+    for the most recent active newsletter cycle only.
+
+    Schedule: Reminder 1 on day 1, Reminder 2 on day 2, Reminder 3 on day 3.
+    Once 3 reminders are sent the reviewer is no longer chased.
+    """
+    settings = Settings()
+    email_svc = EmailService(settings)
+    session = _get_sync_session()
+    sent = 0
+    MAX_REMINDERS = 3
+
+    try:
+        from digital_employee.services.token_service import create_token_sync, build_portal_url
+
+        def _maybe_send(edition, reviewer_email, reviewer_name, role, role_label, page):
+            nonlocal sent
+            days = _days_since_utc(edition.updated_at)
+            reminders_sent = _count_reviewer_reminders(session, edition.id, reviewer_email)
+            # Send next reminder if we haven't caught up with days elapsed (max 3)
+            if reminders_sent >= MAX_REMINDERS or reminders_sent >= days:
+                return
+            reminder_number = reminders_sent + 1
+            token = create_token_sync(
+                session,
+                role=role,
+                action_type="review",
+                actor_email=reviewer_email,
+                actor_name=reviewer_name,
+                edition_id=edition.id,
+                context={"edition_title": edition.title},
+                settings=settings,
+            )
+            portal_url = build_portal_url(settings, token, page=page)
+            session.flush()
+            email_svc.send_reviewer_reminder(
+                reviewer_email=reviewer_email,
+                reviewer_name=reviewer_name,
+                role_label=role_label,
+                edition_title=edition.title,
+                reminder_number=reminder_number,
+                portal_url=portal_url,
+            )
+            session.add(AuditLog(
+                edition_id=edition.id,
+                action=AuditAction.REMINDER_SENT,
+                actor="system",
+                detail=f"Reminder #{reminder_number} sent to {reviewer_email} ({role_label})",
+            ))
+            sent += 1
+            logger.info("reviewer_reminder_sent", role=role, email=reviewer_email,
+                        reminder=reminder_number, edition=edition.title)
+
+        # ── Programme leads: check pending entries in programme_lead_feedback ─
+        import json as _json, yaml as _yaml, os as _os
+        teams_path = _os.path.abspath(_os.path.join(
+            _os.path.dirname(__file__), "..", "..", "..", "config", "teams.yaml"
+        ))
+        prog_lead_map: dict[str, str] = {}  # email → name
+        if _os.path.exists(teams_path):
+            with open(teams_path) as f:
+                teams_data = _yaml.safe_load(f)
+            for prog in teams_data.get("programmes", []):
+                email = (prog.get("programme_lead_email") or "").lower()
+                name = prog.get("programme_lead_name") or email
+                if email:
+                    prog_lead_map[email] = name
+
+        pl_edition = session.execute(
+            select(NewsletterEdition)
+            .where(NewsletterEdition.status == EditionStatus.AWAITING_PROGRAMME_LEAD_APPROVAL)
+            .order_by(NewsletterEdition.updated_at.desc())
+            .limit(1)
+        ).scalars().first()
+        if pl_edition:
+            meta = _json.loads(pl_edition.programme_lead_feedback or "{}")
+            for email_key, entry in meta.items():
+                if entry.get("status") == "pending" and email_key in prog_lead_map:
+                    _maybe_send(pl_edition, email_key, prog_lead_map[email_key],
+                                "programme_lead", "Programme Lead", "review")
+
+        # ── Ashwin ────────────────────────────────────────────────────────────
+        ashwin_ed = session.execute(
+            select(NewsletterEdition)
+            .where(NewsletterEdition.status == EditionStatus.AWAITING_ASHWIN_APPROVAL)
+            .order_by(NewsletterEdition.updated_at.desc())
+            .limit(1)
+        ).scalars().first()
+        if ashwin_ed:
+            _maybe_send(ashwin_ed, settings.ashwin_email, settings.ashwin_name,
+                        "ashwin", "Senior Reviewer", "review")
+
+        # ── Anuj ──────────────────────────────────────────────────────────────
+        anuj_ed = session.execute(
+            select(NewsletterEdition)
+            .where(NewsletterEdition.status == EditionStatus.AWAITING_ANUJ_APPROVAL)
+            .order_by(NewsletterEdition.updated_at.desc())
+            .limit(1)
+        ).scalars().first()
+        if anuj_ed:
+            _maybe_send(anuj_ed, settings.anuj_email, settings.anuj_name,
+                        "anuj", "Delivery Leader", "review")
+
+        session.commit()
+    except Exception as exc:
+        logger.error("reviewer_reminders_error", error=str(exc))
+        session.rollback()
+    finally:
+        session.close()
+
+    logger.info("reviewer_reminders_done", sent=sent)
+    return {"sent": sent}
