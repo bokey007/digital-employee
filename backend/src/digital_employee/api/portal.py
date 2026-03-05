@@ -578,16 +578,25 @@ async def portal_approve(body: ApproveRequest, db: AsyncSession = Depends(get_db
 
     elif pt.role == "ashwin":
         if pt.edition_id and body.final_content:
-            # Save Ashwin's edited content BEFORE dispatching.
-            # _send_to_anuj reads edition.html_content (content body, no template wrapper).
-            # Robustly extract content body — handles both content-only and full-document HTML.
-            content_to_save = _extract_content_body(body.final_content)
-            edition_result = await db.execute(
-                select(NewsletterEdition).where(NewsletterEdition.id == pt.edition_id)
+            # Only overwrite edition.html_content if Ashwin actually edited via chatbot.
+            # Without chat edits, final_content = currentHtml = full rendered newsletter
+            # (<!DOCTYPE html> ... BI header + sections + contacts + footer).
+            # Saving that would cause render_newsletter to double-wrap on the Anuj send path.
+            # After chat edits, [DRAFT] extraction sets currentHtml to content body only
+            # (no <!DOCTYPE / <html), which is safe to save.
+            frontend_html = body.final_content.strip()
+            is_full_template = (
+                frontend_html.lower().startswith("<!doctype") or
+                frontend_html.lower().startswith("<html")
             )
-            edition_obj = edition_result.scalars().first()
-            if edition_obj and content_to_save:
-                edition_obj.html_content = content_to_save
+            if not is_full_template:
+                # Genuine content-body edit — persist it
+                edition_result = await db.execute(
+                    select(NewsletterEdition).where(NewsletterEdition.id == pt.edition_id)
+                )
+                edition_obj = edition_result.scalars().first()
+                if edition_obj:
+                    edition_obj.html_content = frontend_html
 
         from digital_employee.tasks.workflow_tasks import handle_ashwin_reply
         pt.is_used = True
@@ -600,15 +609,24 @@ async def portal_approve(body: ApproveRequest, db: AsyncSession = Depends(get_db
 
     elif pt.role == "anuj":
         if pt.edition_id and body.final_content:
-            # Save Anuj's edited content BEFORE dispatching.
-            # Robustly extract content body — handles both content-only and full-document HTML.
-            content_to_save = _extract_content_body(body.final_content)
-            edition_result = await db.execute(
-                select(NewsletterEdition).where(NewsletterEdition.id == pt.edition_id)
+            # Only overwrite edition.html_content if Anuj actually edited via chatbot.
+            # Same logic as ashwin: without chat edits, final_content is the full rendered
+            # newsletter template (<!DOCTYPE html> with BI header + sections + contacts + footer).
+            # Saving that as html_content and then calling render_newsletter would produce
+            # a double header / double footer in the distribution email.
+            frontend_html = body.final_content.strip()
+            is_full_template = (
+                frontend_html.lower().startswith("<!doctype") or
+                frontend_html.lower().startswith("<html")
             )
-            edition_obj = edition_result.scalars().first()
-            if edition_obj and content_to_save:
-                edition_obj.html_content = content_to_save
+            if not is_full_template:
+                # Genuine content-body edit — persist it
+                edition_result = await db.execute(
+                    select(NewsletterEdition).where(NewsletterEdition.id == pt.edition_id)
+                )
+                edition_obj = edition_result.scalars().first()
+                if edition_obj:
+                    edition_obj.html_content = frontend_html
 
         from digital_employee.tasks.workflow_tasks import handle_anuj_reply
         pt.is_used = True
