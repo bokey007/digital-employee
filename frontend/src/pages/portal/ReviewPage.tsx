@@ -15,6 +15,25 @@ interface ChatMessage {
     content: string
 }
 
+interface WorkstreamEntry {
+    programme: string
+    workstream: string
+    lead_name: string
+    content_html: string
+}
+
+interface ProgrammeSectionEntry {
+    programme: string
+    lead_name: string
+    section_html: string
+}
+
+interface ReferenceData {
+    workstream_submissions: WorkstreamEntry[]
+    programme_sections: ProgrammeSectionEntry[]
+    ashwin_draft: string | null
+}
+
 type Phase = 'loading' | 'invalid' | 'review' | 'feedback' | 'approved'
 
 // ── API helpers ───────────────────────────────────────────────────────────────
@@ -43,6 +62,12 @@ async function sendFeedback(token: string, feedbackText: string) {
         body: JSON.stringify({ token, feedback_text: feedbackText }),
     })
     if (!res.ok) throw new Error('Feedback submission failed')
+    return res.json()
+}
+
+async function getReferenceData(token: string): Promise<ReferenceData> {
+    const res = await fetch(`${API}/api/portal/reference-data?token_str=${encodeURIComponent(token)}`)
+    if (!res.ok) throw new Error('Failed to load reference data')
     return res.json()
 }
 
@@ -116,6 +141,11 @@ export default function ReviewPage() {
     const [approving, setApproving] = useState(false)
     const [error, setError] = useState('')
     const [showPrevious, setShowPrevious] = useState(false)
+    // Source materials drawer (ashwin/anuj only)
+    const [showSources, setShowSources] = useState(false)
+    const [sourceData, setSourceData] = useState<ReferenceData | null>(null)
+    const [sourceLoading, setSourceLoading] = useState(false)
+    const [openSection, setOpenSection] = useState<string | null>('workstream')
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -210,6 +240,19 @@ export default function ReviewPage() {
         }
     }
 
+    // ── Source Materials (ashwin/anuj only) ──
+    const toggleSources = async () => {
+        if (!showSources && !sourceData) {
+            setSourceLoading(true)
+            try {
+                const data = await getReferenceData(token)
+                setSourceData(data)
+            } catch { /* silent fail */ }
+            finally { setSourceLoading(false) }
+        }
+        setShowSources(prev => !prev)
+    }
+
     // ── Shared header ──
     const PortalHeader = () => (
         <div style={{
@@ -298,6 +341,113 @@ export default function ReviewPage() {
             <PortalHeader />
             <div style={{ display: 'flex', height: 'calc(100vh - 86px)' }}>
 
+                {/* Source Materials Drawer — ashwin/anuj only */}
+                {showSources && (
+                    <div style={{
+                        width: '30%', minWidth: 280, maxWidth: 420,
+                        overflowY: 'auto', borderRight: '1px solid rgba(0,228,124,0.2)',
+                        background: 'rgba(8,49,42,0.95)', flexShrink: 0,
+                        display: 'flex', flexDirection: 'column',
+                    }}>
+                        <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(0,228,124,0.12)' }}>
+                            <div style={{ color: '#00E47C', fontWeight: 700, fontSize: 14, fontFamily: 'Calibri, sans-serif' }}>
+                                📂 Source Materials
+                            </div>
+                            <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, marginTop: 2 }}>
+                                Reference all upstream submissions for this edition
+                            </div>
+                        </div>
+
+                        {sourceLoading && (
+                            <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
+                                Loading…
+                            </div>
+                        )}
+
+                        {!sourceLoading && sourceData && (() => {
+                            const AccordionSection = ({ id, label, count, children }: { id: string; label: string; count: number; children: React.ReactNode }) => (
+                                <div style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                    <button
+                                        onClick={() => setOpenSection(openSection === id ? null : id)}
+                                        style={{
+                                            width: '100%', padding: '12px 20px', background: 'none', border: 'none',
+                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                            cursor: 'pointer', color: '#fff', fontFamily: 'Calibri, sans-serif', fontSize: 13,
+                                        }}
+                                    >
+                                        <span style={{ fontWeight: 600 }}>{label}</span>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <span style={{ background: 'rgba(0,228,124,0.15)', color: '#00E47C', borderRadius: 10, padding: '1px 8px', fontSize: 11 }}>{count}</span>
+                                            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>{openSection === id ? '▲' : '▼'}</span>
+                                        </span>
+                                    </button>
+                                    {openSection === id && (
+                                        <div style={{ padding: '0 12px 12px' }}>
+                                            {children}
+                                        </div>
+                                    )}
+                                </div>
+                            )
+
+                            const ContentCard = ({ title: cardTitle, subtitle, html }: { title: string; subtitle?: string; html: string }) => (
+                                <div style={{
+                                    background: 'rgba(255,255,255,0.04)', borderRadius: 8,
+                                    border: '1px solid rgba(255,255,255,0.08)', marginBottom: 10, overflow: 'hidden',
+                                }}>
+                                    <div style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                        <div style={{ color: '#00E47C', fontWeight: 600, fontSize: 12 }}>{cardTitle}</div>
+                                        {subtitle && <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, marginTop: 2 }}>{subtitle}</div>}
+                                    </div>
+                                    <div
+                                        style={{ padding: '12px 14px', maxHeight: 220, overflowY: 'auto', fontSize: 12, color: '#ddd', lineHeight: '1.6' }}
+                                        dangerouslySetInnerHTML={{ __html: html }}
+                                    />
+                                </div>
+                            )
+
+                            // Group workstream submissions by programme
+                            const byProgramme: Record<string, typeof sourceData.workstream_submissions> = {}
+                            for (const ws of sourceData.workstream_submissions) {
+                                if (!byProgramme[ws.programme]) byProgramme[ws.programme] = []
+                                byProgramme[ws.programme].push(ws)
+                            }
+
+                            return (
+                                <>
+                                    <AccordionSection id="workstream" label="Workstream Submissions" count={sourceData.workstream_submissions.length}>
+                                        {Object.entries(byProgramme).map(([prog, entries]) => (
+                                            <div key={prog}>
+                                                <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', padding: '8px 2px 4px' }}>{prog}</div>
+                                                {entries.map(ws => (
+                                                    <ContentCard key={ws.workstream} title={ws.workstream} subtitle={ws.lead_name} html={ws.content_html} />
+                                                ))}
+                                            </div>
+                                        ))}
+                                        {sourceData.workstream_submissions.length === 0 && (
+                                            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12, padding: '8px 2px' }}>No submissions yet.</div>
+                                        )}
+                                    </AccordionSection>
+
+                                    <AccordionSection id="programme" label="Programme Lead Sections" count={sourceData.programme_sections.length}>
+                                        {sourceData.programme_sections.map(pl => (
+                                            <ContentCard key={pl.programme} title={pl.programme} subtitle={pl.lead_name} html={pl.section_html} />
+                                        ))}
+                                        {sourceData.programme_sections.length === 0 && (
+                                            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12, padding: '8px 2px' }}>No programme sections yet.</div>
+                                        )}
+                                    </AccordionSection>
+
+                                    {sourceData.ashwin_draft !== null && (
+                                        <AccordionSection id="ashwin" label="Ashwin's Final Draft" count={1}>
+                                            <ContentCard title="Approved Draft" html={sourceData.ashwin_draft || ''} />
+                                        </AccordionSection>
+                                    )}
+                                </>
+                            )
+                        })()}
+                    </div>
+                )}
+
                 {/* Left: Newsletter Preview */}
                 <div style={{
                     flex: 1, overflowY: 'auto', padding: '24px',
@@ -318,7 +468,22 @@ export default function ReviewPage() {
                                     📅 {showPrevious ? 'Hide Previous Month' : 'Show Previous Month'}
                                 </button>
                             )}
-                            {/* Request Changes button removed — all reviewers use the AI chat to refine */}
+                            {/* Source Materials — ashwin and anuj only */}
+                            {info?.role && ['ashwin', 'anuj'].includes(info.role) && (
+                                <button
+                                    id="source-materials-btn"
+                                    onClick={toggleSources}
+                                    style={{
+                                        background: showSources ? 'rgba(0,228,124,0.2)' : 'rgba(0,228,124,0.08)',
+                                        border: `1px solid ${showSources ? '#00E47C' : '#00E47C30'}`,
+                                        color: '#00E47C', borderRadius: 6, padding: '7px 14px',
+                                        fontFamily: 'Calibri, sans-serif', fontSize: 12, cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                    }}
+                                >
+                                    📂 {showSources ? 'Hide Sources' : 'Source Materials'}
+                                </button>
+                            )}
                             <button
                                 id="approve-btn"
                                 onClick={handleApprove}

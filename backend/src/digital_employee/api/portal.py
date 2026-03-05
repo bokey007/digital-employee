@@ -100,6 +100,26 @@ class FeedbackRequest(BaseModel):
     feedback_text: str
 
 
+class WorkstreamEntry(BaseModel):
+    programme: str
+    workstream: str
+    lead_name: str
+    content_html: str
+
+
+class ProgrammeSectionEntry(BaseModel):
+    programme: str
+    lead_name: str
+    section_html: str
+
+
+class ReferenceDataResponse(BaseModel):
+    workstream_submissions: list[WorkstreamEntry] = []
+    programme_sections: list[ProgrammeSectionEntry] = []
+    ashwin_draft: str | None = None  # Anuj only
+
+
+
 # ── Endpoints ────────────────────────────────────────────────────────────────
 
 
@@ -239,6 +259,90 @@ async def get_token_info(token_str: str, db: AsyncSession = Depends(get_db)):
         reworded_content=reworded,
         edition_title=ctx.get("edition_title"),
         previous_submission=previous_submission,
+    )
+
+
+@router.get("/reference-data", response_model=ReferenceDataResponse)
+async def get_reference_data(token_str: str, db: AsyncSession = Depends(get_db)):
+    """Return source material for Ashwin and Anuj review portal.
+
+    Ashwin: all approved workstream submissions + approved programme lead sections.
+    Anuj:   same as Ashwin + edition.html_content (Ashwin's approved draft).
+    """
+    pt = await lookup_token_async(db, token_str)
+    if not pt or pt.role not in ("ashwin", "anuj"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied.")
+
+    if not pt.edition_id:
+        return ReferenceDataResponse()
+
+    # ── Fetch edition ─────────────────────────────────────────────────────────
+    ed_result = await db.execute(
+        select(NewsletterEdition).where(NewsletterEdition.id == pt.edition_id)
+    )
+    edition = ed_result.scalars().first()
+    if not edition:
+        return ReferenceDataResponse()
+
+    # ── Workstream submissions (APPROVED status) ──────────────────────────────
+    subs_result = await db.execute(
+        select(LeadSubmission).where(
+            LeadSubmission.edition_id == pt.edition_id,
+            LeadSubmission.status == SubmissionStatus.APPROVED,
+        ).order_by(LeadSubmission.programme, LeadSubmission.workstream)
+    )
+    subs = subs_result.scalars().all()
+    workstream_submissions = [
+        WorkstreamEntry(
+            programme=s.programme or "",
+            workstream=s.workstream or "",
+            lead_name=s.lead_name or "",
+            content_html=s.reworded_content or "",
+        )
+        for s in subs if s.reworded_content
+    ]
+
+    # ── Programme lead sections (from programme_lead_feedback JSON) ───────────
+    import os, yaml
+    teams_path = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), "..", "..", "..", "config", "teams.yaml"
+    ))
+    prog_lead_names: dict[str, str] = {}  # email → name
+    if os.path.exists(teams_path):
+        with open(teams_path) as f:
+            teams_data = yaml.safe_load(f)
+        for prog in teams_data.get("programmes", []):
+            email = (prog.get("programme_lead_email") or "").lower()
+            name = prog.get("programme_lead_name") or email
+            prog_name = prog.get("name", "")
+            if email:
+                prog_lead_names[email] = {"name": name, "programme": prog_name}
+
+    programme_sections = []
+    if edition.programme_lead_feedback:
+        try:
+            pl_meta = json.loads(edition.programme_lead_feedback)
+            for email, entry in pl_meta.items():
+                section_html = entry.get("section_html", "")
+                if section_html:
+                    info = prog_lead_names.get(email.lower(), {})
+                    programme_sections.append(ProgrammeSectionEntry(
+                        programme=info.get("programme", email),
+                        lead_name=info.get("name", email),
+                        section_html=section_html,
+                    ))
+        except (json.JSONDecodeError, AttributeError):
+            pass
+
+    # ── Ashwin's final draft (Anuj only) ──────────────────────────────────────
+    ashwin_draft: str | None = None
+    if pt.role == "anuj" and edition.html_content:
+        ashwin_draft = edition.html_content
+
+    return ReferenceDataResponse(
+        workstream_submissions=workstream_submissions,
+        programme_sections=programme_sections,
+        ashwin_draft=ashwin_draft,
     )
 
 
