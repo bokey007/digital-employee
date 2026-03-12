@@ -36,13 +36,16 @@ An autonomous AI agent that manages the entire lifecycle of monthly client newsl
 
 | Feature | Description |
 |---------|-------------|
-| **Autonomous Email Agent** | Polls inbox, classifies replies, sends requests & reminders — zero manual intervention |
+| **Portal-Based Review Workflow** | All leads, programme leads, Ashwin, and Anuj review and approve content through personalised, token-secured web portal links — no email replies required |
+| **AI Chatbot in Review Portal** | Ashwin and Anuj can instruct the AI directly in the portal to refine the newsletter before approving. Chat responses stream in real-time via SSE. |
+| **Reference Data Panel** | Ashwin can view all workstream and programme lead submissions side-by-side while reviewing. Anuj additionally sees Ashwin's approved draft for full context. |
 | **LLM Content Engine** | OpenAI / Azure OpenAI rewording, consolidation, and feedback incorporation |
 | **Dedicated Quality Dashboard Pipeline** | Automatically emails numerical metrics requests to the Quality lead and algorithmically maps their response directly into a bespoke HTML dashboard circle grid |
-| **Multi-Level Approvals** | 4-stage chain: Workstream Lead → Programme Lead (multi-workstream programmes only) → Ashwin → Anuj → Distribution List |
-| **Smart Single-Workstream Handling** | Programmes with a single workstream skip the programme lead stage; their workstream heading is suppressed in the newsletter |
-| **Agentic AI Chatbot** | LangGraph Tool-calling Agent that dynamically queries *both* historical RAG data (pgvector) and live SQL Work-In-Progress drafts to answer complex comparative questions. Responses are streamed and structured with beautiful ReactMarkdown typography, tailored spacing, and emojis. |
-| **Premium SaaS Template** | Outlook-optimized HTML template rebuilt with a sleek, 10/10 magazine aesthetic (glassmorphism/box shadows, Segoe UI typography, Boehringer Ingelheim color palettes) |
+| **Multi-Level Approvals** | 4-stage chain: Workstream Lead → Programme Lead (if configured) → Ashwin → Anuj → Distribution List |
+| **Flexible Programme Lead Routing** | Programmes with a `programme_lead_email` in `teams.yaml` always require programme lead approval — regardless of the number of workstreams. Programmes without one go directly to Ashwin. |
+| **3-Reminder Email Schedule** | Automatically sends up to 3 daily reminder emails for each pending action across every persona, for the current active cycle only |
+| **Agentic AI Chatbot** | LangGraph Tool-calling Agent that dynamically queries both historical RAG data (pgvector) and live SQL Work-In-Progress drafts to answer complex comparative questions |
+| **Premium SaaS Template** | Outlook-optimized HTML template with a magazine aesthetic — BI colors, Segoe UI typography, glassmorphism |
 | **Admin Control Panel** | Real-time dashboard, newsletter management, lead tracking, activity feed |
 | **Production-Ready Infra** | Helm charts for OpenShift, Docker Compose for local dev, HPA, health probes |
 | **Impact Tracking** | Automatically calculates internal ROI (Hours Saved & Dollars Saved) natively in the dashboard based on an empirical time-tracking cost model. |
@@ -53,11 +56,12 @@ An autonomous AI agent that manages the entire lifecycle of monthly client newsl
 
 The dashboard natively tracks automation savings. To ensure the ROI figures are highly realistic, defensible, and unarguable to stakeholders, the system calculates savings using a conservative enterprise baseline model:
 
-*   **Emails Handled (10 minutes each)**: Time to read, context-switch, map to a tracking spreadsheet, determine the next step, and reply.
+*   **Emails Sent (10 minutes each)**: Time to compose, format, and send personalised review requests and reminders to every lead.
+*   **Portal Interactions (10 minutes each)**: Time a human coordinator would spend manually chasing a reviewer, recording their decision, and routing it to the next stage — replaced by the automated portal flow.
 *   **Chatbot Questions (15 minutes each)**: Time it takes a human to context-switch, search through SharePoint or wiki files, or interrupt a colleague to find an elusive policy answer.
 *   **Content Rewording (20 minutes per section)**: The AI takes raw, unstructured bullet points from engineers and writes a polished, brand-aligned, grammatically correct paragraph.
-*   **Newsletter Consolidation (30 minutes)**: Taking 5 to 10 separate workstream texts, assembling them in HTML/Word, formatting headings, applying Boehringer Ingelheim colors, and ensuring a pristine layout.
-*   **Cost Savings ($65/hour)**: Represents a blended, highly conservative fully-loaded corporate rate for internal PMs or Communications Managers in a global delivery model ($135K USD annual equivalent). *(Calculated algorithmically inside `dashboard.py`)*
+*   **Newsletter Consolidation (30 minutes)**: Taking 10+ separate workstream texts, assembling them in HTML, formatting headings, applying Boehringer Ingelheim colors, and ensuring a pristine layout.
+*   **Cost Savings ($65/hour)**: Represents a blended, highly conservative fully-loaded corporate rate for internal PMs or Communications Managers. *(Calculated algorithmically inside `dashboard.py`)*
 
 ---
 
@@ -107,7 +111,7 @@ INITIATE → COLLECT → REWORD → LEAD APPROVAL
   SEND TO CLIENT → COMPLETE
 ```
 
-> **Single-workstream programmes** (e.g. a standalone "Quality" programme) have no intermediate programme lead. Their content flows directly from team lead approval to Ashwin. In the newsletter, the workstream subheading is suppressed — only the programme heading appears.
+> **Programme lead routing** is determined solely by whether `programme_lead_email` is set in `teams.yaml` — not by the number of workstreams. A single-workstream programme **with** a programme lead still goes through that lead's approval before Ashwin.
 
 ---
 
@@ -236,28 +240,40 @@ npm run dev
 
 Edit [`backend/config/teams.yaml`](backend/config/teams.yaml) with your actual programmes, workstreams, and lead contacts.
 
-For **multi-workstream programmes**, add a `programme_lead_name` and `programme_lead_email` — this person receives the consolidated programme section for approval before Ashwin sees the full newsletter.
-
-For **single-workstream programmes**, omit the programme lead fields. The workstream lead's approval goes directly to Ashwin, and the workstream heading is suppressed in the newsletter.
+**Routing rule:** The presence of `programme_lead_email` determines whether a programme lead approval step is required — **not** the number of workstreams.
 
 ```yaml
 programmes:
-  - name: "Data & Analytics"
-    programme_lead_name: "Programme Lead Name"  # required for multi-workstream
-    programme_lead_email: "lead@yourorg.com"
+  # Multi-workstream programme WITH programme lead
+  # → All workstream leads approve → programme lead approves → Ashwin
+  - name: "Business Reporting"
+    programme_lead_name: "Anitha Shalini"
+    programme_lead_email: "anitha.shalini.ext@yourorg.com"
     workstreams:
-      - name: "Data Platform"
-        lead_name: "Priya Sharma"
-        lead_email: "priya.sharma@yourorg.com"
-      - name: "BI & Reporting"
-        lead_name: "Rohit Kumar"
-        lead_email: "rohit.kumar@yourorg.com"
+      - name: "CRM & MCE"
+        lead_name: "Pallavi Kaushik"
+        lead_email: "pallavi.kaushik.ext@yourorg.com"
+      - name: "Value & Access"
+        lead_name: "Snehasish Samal"
+        lead_email: "snehasish.samal.ext@yourorg.com"
 
-  - name: "Quality"  # single-workstream — no programme lead needed
+  # Single-workstream programme WITH programme lead
+  # → Workstream lead approves → programme lead approves → Ashwin
+  - name: "Digital"
+    programme_lead_name: "Vimal"
+    programme_lead_email: "vimal.gunasekaran.ext@yourorg.com"
     workstreams:
-      - name: "Quality Metrics"
-        lead_name: "Abhijith"
-        lead_email: "abhijith@yourorg.com"
+      - name: "Digital"
+        lead_name: "Shivangi"
+        lead_email: "shivangi.singh.ext@yourorg.com"
+
+  # Single-workstream programme WITHOUT programme lead
+  # → Workstream lead approves → directly to Ashwin (no intermediate step)
+  - name: "Quality"
+    workstreams:
+      - name: "Quality"
+        lead_name: "Mithun"
+        lead_email: "mithun.seshadri.ext@yourorg.com"
 ```
 
 ---
@@ -270,7 +286,7 @@ programmes:
 | `GET` | `/api/newsletters/{id}` | Get edition detail with submissions |
 | `GET` | `/api/newsletters/{id}/preview` | HTML preview of the newsletter |
 | `POST` | `/api/newsletters/trigger` | Start a new newsletter cycle |
-| `GET` | `/api/dashboard/metrics` | Dashboard summary metrics |
+| `GET` | `/api/dashboard/metrics` | Dashboard summary metrics (includes ROI) |
 | `GET` | `/api/dashboard/activity` | Audit trail / activity feed |
 | `POST` | `/api/chat` | RAG chat query (non-streaming) |
 | `POST` | `/api/chat/stream` | RAG chat query (SSE streaming) |
@@ -278,6 +294,11 @@ programmes:
 | `GET` | `/api/leads/config` | Get teams.yaml configuration |
 | `PUT` | `/api/leads/config` | Update teams configuration |
 | `GET` | `/api/leads/stats` | Per-lead statistics |
+| `GET` | `/api/portal/token/{token}` | Validate portal token, return role & context |
+| `POST` | `/api/portal/chat` | AI chat in the review portal (SSE streaming) |
+| `POST` | `/api/portal/approve` | Submit approval via portal |
+| `POST` | `/api/portal/feedback` | Submit revision feedback via portal |
+| `GET` | `/api/portal/reference-data` | Source materials for Ashwin/Anuj reference panel |
 | `GET` | `/healthz` | Liveness probe |
 | `GET` | `/readyz` | Readiness probe (checks DB) |
 | `WS` | `/ws` | WebSocket real-time notifications |
@@ -323,20 +344,18 @@ The chart includes:
 ## 🔄 How the Workflow Works
 
 1. **Admin triggers** a new newsletter cycle via the dashboard or API
-2. **Digital Employee emails** all workstream leads requesting updates
-3. **Celery Beat** polls the inbox every 60 seconds for replies
-4. When a lead replies, the **Email Parser** classifies it and the **LLM rewrites** it professionally
-5. The reworded content is **sent back to the lead for approval**
-6. For **multi-workstream programmes**: once all their workstream leads approve, the programme content is consolidated and sent to the **Programme Lead** for an intermediate review
-7. For **single-workstream programmes**: content goes directly to Ashwin after the team lead approves
-8. Once all programme leads (and single-workstream leads) clear, the full newsletter is sent to **Ashwin** for pre-Anuj review
-9. If Ashwin gives feedback → LLM incorporates it and re-submits to Ashwin
-10. If Ashwin approves → newsletter forwarded to **Anuj** for final review
-11. If Anuj gives feedback → LLM incorporates it and re-submits
-12. If Anuj approves → **newsletter is broadcast to the entire Distribution List**
-13. The completed newsletter is **indexed into pgvector** for RAG / Agent queries
+2. **Digital Employee emails** all workstream leads a personalised portal link requesting their update
+3. Each lead clicks the link, reviews the AI-reworded version of their submission, makes edits via chatbot if needed, and **approves via the portal**
+4. For programmes with a `programme_lead_email`: once all workstream leads approve, the consolidated programme section is sent to the **Programme Lead** for intermediate review via their own portal link
+5. For programmes **without** a programme lead: workstream lead approval goes directly to Ashwin
+6. When all programmes clear, the full newsletter is consolidated and sent to **Ashwin** via a review portal link
+7. Ashwin can chat with the AI to refine the newsletter and view all source submissions in the **Reference Data Panel**
+8. If Ashwin approves → newsletter forwarded to **Anuj** via a review portal link
+9. Anuj can chat, refine, and also view Ashwin's final draft in the **Reference Data Panel**
+10. If Anuj approves → the static header, key contacts, and footer are applied **once** and the **newsletter is broadcast to the Distribution List**
+11. The completed newsletter is **indexed into pgvector** for RAG / Agent queries
 
-Reminders are sent automatically if leads don't respond within the configured window (default: 3 days, max 2 reminders).
+**Reminders:** Up to 3 daily reminder emails are sent automatically for each pending action in the current active cycle only.
 
 ---
 
