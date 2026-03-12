@@ -1,0 +1,42 @@
+# ── Team / Programme Configuration ─────────────────────────────────────────
+#
+# Copy this file to teams.yaml and fill in real values.
+# teams.yaml is gitignored — it stays local only (contains real email addresses).
+#
+# ROUTING RULE: The presence of `programme_lead_email` determines whether a
+# programme lead approval step is required — NOT the number of workstreams.
+#
+#   programme_lead_email present  → workstream leads → programme lead → Ashwin
+#   programme_lead_email absent   → workstream leads → directly to Ashwin
+
+programmes:
+  # Multi-workstream programme WITH programme lead
+  # → All workstream leads approve → programme lead approves → Ashwin
+  - name: "Business Reporting"
+    programme_lead_name: "Programme Lead Name"
+    programme_lead_email: "prog.lead@yourorg.com"
+    workstreams:
+      - name: "CRM & MCE"
+        lead_name: "Workstream Lead A"
+        lead_email: "lead.a@yourorg.com"
+      - name: "Value & Access"
+        lead_name: "Workstream Lead B"
+        lead_email: "lead.b@yourorg.com"
+
+  # Single-workstream programme WITH programme lead
+  # → Workstream lead approves → programme lead approves → Ashwin
+  - name: "Digital"
+    programme_lead_name: "Programme Lead Name"
+    programme_lead_email: "digital.lead@yourorg.com"
+    workstreams:
+      - name: "Digital"
+        lead_name: "Workstream Lead"
+        lead_email: "digital.ws.lead@yourorg.com"
+
+  # Single-workstream programme WITHOUT programme lead
+  # → Workstream lead approves → directly to Ashwin (no intermediate step)
+  - name: "Quality"
+    workstreams:
+      - name: "Quality"
+        lead_name: "Workstream Lead"
+        lead_email: "quality.lead@yourorg.com"

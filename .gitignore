@@ -40,3 +40,7 @@ logs/
 *.db
 pgdata/
 redisdata/
+
+# Team config — contains real names and email addresses, keep local only
+backend/config/teams.yaml
+backend/config/teams copy.yaml
