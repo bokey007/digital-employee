@@ -88,7 +88,7 @@ export default function DashboardPage() {
         ? [
             { label: 'Hours Saved', value: `${metrics.hours_saved} hrs`, icon: Clock, color: 'brand' },
             { label: 'Cost Savings', value: `$${metrics.dollar_value_saved.toLocaleString()}`, icon: DollarSign, color: 'emerald' },
-            { label: 'Emails Handled', value: metrics.emails_sent + metrics.emails_received, icon: Send, color: 'blue' },
+            { label: 'Portal Interactions', value: metrics.portal_interactions, icon: Send, color: 'blue' },
             { label: 'Questions Answered', value: metrics.questions_answered, icon: MessageSquare, color: 'purple' },
         ]
         : []

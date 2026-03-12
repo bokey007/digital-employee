@@ -1,0 +1,57 @@
+# ── Team / Programme Configuration ─────────────────────────────────────────
+#
+# Define your programmes, sub-workstreams, and the lead contacts for each.
+# The digital employee will email each lead when a newsletter cycle starts.
+#
+# Multi-workstream programmes MUST have a programme_lead_name and
+# programme_lead_email. These leads will receive a consolidated view of all
+# their workstream sections for approval before Ashwin sees the full newsletter.
+#
+# Single-workstream programmes have NO programme lead — the workstream lead's
+# approval goes directly to Ashwin. In the newsletter, the workstream heading
+# is omitted for these programmes (the programme itself is the heading).
+
+programmes:
+  - name: "Data & Analytics"
+    programme_lead_name: "vimal"       # ← REPLACE with actual name
+    programme_lead_email: "bokey.transport.team@gmail.com"   # ← REPLACE with actual email
+    workstreams:
+      - name: "Data Platform"
+        lead_name: "Sarala Deshmukh"
+        lead_email: "sarala.arvind.deshmukh@gmail.com"
+      - name: "BI & Reporting"
+        lead_name: "Rohit Kumar"
+        lead_email: "sudhir.admi.team@gmail.com"
+        # lead_email: "rohit.kumar@yourorg.com"
+
+  - name: "Quality"
+    # Single-workstream programme — no programme_lead required.
+    # The workstream lead's approval goes directly to Ashwin.
+    # In the newsletter, "Quality Metrics" heading is suppressed.
+    workstreams:
+      - name: "Quality Metrics"
+        lead_name: "Abhijith"
+        lead_email: "bokey.trc@gmail.com" # Using dummy for now, replace as needed
+
+
+  # - name: "Cloud Modernisation"
+  #   programme_lead_name: "Cloud Programme Lead"
+  #   programme_lead_email: "cloud.lead@yourorg.com"
+  #   workstreams:
+  #     - name: "Infrastructure Migration"
+  #       lead_name: "Anita Desai"
+  #       lead_email: "sudhir.admi.team@gmail.com"
+  #     - name: "Application Modernisation"
+  #       lead_name: "Vikram Patel"
+  #       lead_email: "sudhir.admi.team@gmail.com"
+
+  # - name: "Digital Engineering"
+  #   programme_lead_name: "Digital Engineering Lead"
+  #   programme_lead_email: "digital.lead@yourorg.com"
+  #   workstreams:
+  #     - name: "Frontend Development"
+  #       lead_name: "Neha Gupta"
+  #       lead_email: "sudhir.admi.team@gmail.com"
+  #     - name: "API & Microservices"
+  #       lead_name: "Suresh Reddy"
+  #       lead_email: "sudhir.admi.team@gmail.com"

@@ -8,7 +8,7 @@ export interface DashboardMetrics {
     total_leads: number
     avg_turnaround_days: number | null
     emails_sent: number
-    emails_received: number
+    portal_interactions: number  // approvals, feedback, chat turns via web portal
     questions_answered: number
     hours_saved: number
     dollar_value_saved: number
