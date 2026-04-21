@@ -1,0 +1,105 @@
+# ── Team / Programme Configuration ─────────────────────────────────────────
+#
+# Define your programmes, sub-workstreams, and the lead contacts for each.
+# The digital employee will email each lead when a newsletter cycle starts.
+#
+# Multi-workstream programmes MUST have a programme_lead_name and
+# programme_lead_email. These leads will receive a consolidated view of all
+# their workstream sections for approval before Ashwin sees the full newsletter.
+#
+# Single-workstream programmes have NO programme lead — the workstream lead's
+# approval goes directly to Ashwin. In the newsletter, the workstream heading
+# is omitted for these programmes (the programme itself is the heading).
+
+programmes:
+  - name: "Business Reporting"
+    programme_lead_name: "Anitha Shalini"
+    programme_lead_email: "anitha.shalini.ext@boehringer-ingelheim.com"
+    workstreams:
+      - name: "CRM & MCE"
+        lead_name: "Pallavi Kaushik"
+        lead_email: "pallavi.kaushik.ext@boehringer-ingelheim.com"
+      - name: "Value & Access"
+        lead_name: "Snehasish Samal"
+        lead_email: "snehasish.samal.ext@boehringer-ingelheim.com"
+      - name: "Accounts & Medical"
+        lead_name: "Pallavi Kaushik"
+        lead_email: "pallavi.kaushik.ext@boehringer-ingelheim.com"
+      - name: "SharePoint"
+        lead_name: "Manisha"
+        lead_email: "manisha.joshi.ext@boehringer-ingelheim.com"
+
+  - name: "Specialty"
+    programme_lead_name: "Neha Shejwalkar"
+    programme_lead_email: "neha.shejwalkar.ext@boehringer-ingelheim.com"
+    workstreams:
+      - name: "Onco & Immuno"
+        lead_name: "Gaurav"
+        lead_email: "gaurav.mokati.ext@boehringer-ingelheim.com"
+      - name: "ILD"
+        lead_name: "Mubashir"
+        lead_email: "mubashir_hussain.s_m.ext@boehringer-ingelheim.com"
+      - name: "Data Strategy & Enablement"
+        lead_name: "Manu"
+        lead_email: "manu.shrotriya.ext@boehringer-ingelheim.com"
+      - name: "Data Operationalization"
+        lead_name: "Manu"
+        lead_email: "manu.shrotriya.ext@boehringer-ingelheim.com"
+
+  - name: "Digital"
+    programme_lead_name: "Vimal"
+    programme_lead_email: "vimal_anandh.gunasekaran.ext@boehringer-ingelheim.com"
+    workstreams:
+      - name: "Digital"
+        lead_name: "Shivangi"
+        lead_email: "shivangi.singh.ext@boehringer-ingelheim.com"
+
+  - name: "Leadership Reporting & Data Products"
+    programme_lead_name: "Angad"
+    programme_lead_email: "angad.singh.ext@boehringer-ingelheim.com"
+    workstreams:
+      - name: "Leadership Reporting & Data Products"
+        lead_name: "Indrani"
+        lead_email: "indrani.bhattacharya.ext@boehringer-ingelheim.com"
+
+  - name: "Data"
+    programme_lead_name: "Mitul"
+    programme_lead_email: "mitul.anand.ext@boehringer-ingelheim.com"
+    workstreams:
+      - name: "PEP"
+        lead_name: "Siva Priya Kadir"
+        lead_email: "siva_priya.kadiri.ext@boehringer-ingelheim.com"
+      - name: "Email Management"
+        lead_name: "Umeshwara"
+        lead_email: "umeshwara.erannagari.ext@boehringer-ingelheim.com"
+      - name: "MDM"
+        lead_name: "Gyandeep G."
+        lead_email: "gyandeep.gorantala.ext@boehringer-ingelheim.com"
+      - name: "Patient Data"
+        lead_name: "Anmol Mathur"
+        lead_email: "anmol.mathur.ext@boehringer-ingelheim.com"
+      - name: "TPA & SPEX"
+        lead_name: "Sai Rahul"
+        lead_email: "venkata_sai_rahul.penumadu.ext@boehringer-ingelheim.com"
+      - name: "Data Quality & Governance"
+        lead_name: "Prathiba CM"
+        lead_email: "prathiba.c_m.ext@boehringer-ingelheim.com"
+      - name: "OneTrust"
+        lead_name: "Vinutha"
+        lead_email: "vinutha.s.ext@boehringer-ingelheim.com"
+
+  - name: "Gen AI"
+    # Single-workstream programme — no programme_lead required.
+    # The workstream lead's approval goes directly to Ashwin.
+    workstreams:
+      - name: "Gen AI"
+        lead_name: "Sudhir"
+        lead_email: "sudhir.deshmukh.ext@boehringer-ingelheim.com"
+
+  - name: "Quality"
+    # Single-workstream programme — no programme_lead required.
+    # The workstream lead's approval goes directly to Ashwin.
+    workstreams:
+      - name: "Quality"
+        lead_name: "Mithun"
+        lead_email: "mithun.seshadri.ext@boehringer-ingelheim.com"

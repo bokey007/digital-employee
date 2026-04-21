@@ -143,17 +143,23 @@ def build_portal_review_system_prompt(
         "Be concise in your explanations and proactive in suggesting improvements if asked.\n\n"
         "IMPORTANT — Output format when making any changes:\n"
         "1. Write a short conversational acknowledgement (1-2 sentences max) — NO HTML here.\n"
-        "2. Then output the CONTENT BODY HTML wrapped in delimiters EXACTLY like this:\n"
+        "2. Then output the COMPLETE CONTENT BODY HTML wrapped in delimiters EXACTLY like this:\n"
         "[DRAFT]\n"
-        "<your revised content body HTML here>\n"
+        "<your COMPLETE revised content body HTML here>\n"
         "[/DRAFT]\n"
-        "CRITICAL: The content inside [DRAFT]...[/DRAFT] must be CONTENT BODY HTML ONLY.\n"
-        "Do NOT include <!DOCTYPE>, <html>, <head>, or <body> tags — those are added automatically.\n"
-        "Do NOT include the newsletter header, navigation bar, key contacts section, or footer.\n"
-        "Output ONLY the inner newsletter sections (KEY HIGHLIGHTS, DELIVERY UPDATES, QUALITY, INNOVATION).\n"
+        "CRITICAL RULES:\n"
+        "- The content inside [DRAFT]...[/DRAFT] must be CONTENT BODY HTML ONLY.\n"
+        "- Do NOT include <!DOCTYPE>, <html>, <head>, or <body> tags — those are added automatically.\n"
+        "- Do NOT include the newsletter header, navigation bar, key contacts section, or footer.\n"
+        "- Output ONLY the inner newsletter sections (KEY HIGHLIGHTS, DELIVERY UPDATES, QUALITY, INNOVATION).\n"
+        "- *** ALWAYS RETURN THE FULL, COMPLETE CONTENT BODY WITH ALL SECTIONS — even sections you did NOT change. ***\n"
+        "- If the user asked you to change only one section, you must STILL include every other section UNCHANGED.\n"
+        "- NEVER return only the changed section — the [DRAFT] block REPLACES the entire newsletter content.\n"
+        "- Omitting unchanged sections will DELETE them from the newsletter permanently.\n"
         "The frontend will automatically extract and apply the HTML from inside [DRAFT]...[/DRAFT]. "
         "Do NOT put explanations or HTML outside those delimiters."
     )
+
 
 
 # ── Agent creators ───────────────────────────────────────────────────────────
